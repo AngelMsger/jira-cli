@@ -19,6 +19,8 @@ use it. Write commands support `--dry-run`, and destructive ones require `--yes`
 
 📖 **Documentation site:** <https://angelmsger.github.io/jira-cli/>
 
+![jira-cli — drive Jira issue-tracking workflows from your terminal](docs/image.png)
+
 ## Features
 
 - **Cloud & Data Center** — one flavor-agnostic client; the backend is detected
@@ -156,17 +158,13 @@ jira-cli --use-context prod issue get PROJ-123   # override for one command
 `JIRA_CONTEXT` overrides the current context via the environment. Legacy
 single-server config files are read unchanged.
 
-## Related
+## Errors and exit codes
 
-Part of a family of agent-facing CLIs — one skeleton, one set of conventions, all
-built for coding agents. Browse the full set at
-**[github.com/AngelMsger](https://github.com/AngelMsger)**:
-
-- **jira-cli** — Jira issues & workflow transitions *(this project)*
-- **[bitbucket-cli](https://github.com/AngelMsger/bitbucket-cli)** — Bitbucket pull requests & code review
-- **[confluence-cli](https://github.com/AngelMsger/confluence-cli)** — Confluence as a knowledge base
-- **[openobserve-cli](https://github.com/AngelMsger/openobserve-cli)** — OpenObserve logs, metrics & traces
-- **[jenkins-cli](https://github.com/AngelMsger/jenkins-cli)** — inspect Jenkins jobs & builds
+Failures are JSON on **stderr** (stdout stays a clean data channel) and map to
+stable exit codes: `0` success, `2` usage, `3` config, `4` auth, `5` permission,
+`6` not found, `7` rate limit, `8` network, `9` server, `10` parse, `11` conflict.
+Each error carries `next_steps` naming the command to run next, and `retryable`
+to guide back-off.
 
 ## Use as a Go library
 
@@ -233,6 +231,18 @@ command or flag, run `make docs` and commit the result — CI fails if it drifts
 See [docs/technical-design.md](docs/technical-design.md) for the architecture
 and `internal/` package layout, [docs/releasing.md](docs/releasing.md) for the
 release process, and [CHANGELOG.md](CHANGELOG.md) for the version history.
+
+## Related
+
+Part of a family of agent-facing CLIs — one skeleton, one set of conventions, all
+built for coding agents. Browse the full set at
+**[github.com/AngelMsger](https://github.com/AngelMsger)**:
+
+- **[confluence-cli](https://github.com/AngelMsger/confluence-cli)** — Confluence as a knowledge base
+- **[bitbucket-cli](https://github.com/AngelMsger/bitbucket-cli)** — Bitbucket pull requests & code review
+- **[openobserve-cli](https://github.com/AngelMsger/openobserve-cli)** — OpenObserve logs, metrics & traces
+- **[jenkins-cli](https://github.com/AngelMsger/jenkins-cli)** — inspect Jenkins jobs & builds
+- **jira-cli** — Jira issues & workflow transitions *(this project)*
 
 ## License
 

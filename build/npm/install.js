@@ -11,7 +11,7 @@ const crypto = require('crypto');
 
 const pkg = require('./package.json');
 
-const REPO = 'angelmsger/jira-cli';
+const REPO = 'AngelMsger/jira-cli';
 
 const goosByPlatform = { darwin: 'darwin', linux: 'linux', win32: 'windows' };
 const goarchByArch = { x64: 'amd64', arm64: 'arm64' };

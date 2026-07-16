@@ -7,10 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Family-style hero image (`docs/image.png`), shown in the README and in the
+  docs-site hero like the sibling CLIs.
+
+### Changed
+
+- README now follows the family-canonical section order ("Errors and exit
+  codes" section, "Related" moved to the end) and lists siblings in the
+  family-canonical order, as does the docs-site footer.
+
 ### Fixed
 
 - The npm installation banner now suggests Jira `issue search` and `issue get`
   commands instead of copied Confluence commands.
+- The npm package README now describes Jira issue workflows (the previous
+  description was copied from confluence-cli's "external knowledge base"
+  text).
 
 ## [0.1.0] - 2026-07-16
 
