@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jira-cli — CLI reference</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="canonical" href="https://angelmsger.github.io/jira-cli/cli/">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="../">jira-cli</a>
+    <div class="nav-links">
+      <a href="../">Home</a>
+      <a class="is-cli" href="../#commands">Commands</a>
+      <a href="https://github.com/angelmsger/jira-cli">GitHub</a>
+    </div>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="side">
+    <div class="side-group">
+      <div class="side-title">auth</div>
+      <a href="#jira-cli-auth">jira-cli auth</a>
+      <a href="#jira-cli-auth-login">jira-cli auth login</a>
+      <a href="#jira-cli-auth-logout">jira-cli auth logout</a>
+      <a href="#jira-cli-auth-status">jira-cli auth status</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">comment</div>
+      <a href="#jira-cli-comment">jira-cli comment</a>
+      <a href="#jira-cli-comment-add">jira-cli comment add</a>
+      <a href="#jira-cli-comment-delete">jira-cli comment delete</a>
+      <a href="#jira-cli-comment-list">jira-cli comment list</a>
+      <a href="#jira-cli-comment-update">jira-cli comment update</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">config</div>
+      <a href="#jira-cli-config">jira-cli config</a>
+      <a href="#jira-cli-config-delete-context">jira-cli config delete-context</a>
+      <a href="#jira-cli-config-get-contexts">jira-cli config get-contexts</a>
+      <a href="#jira-cli-config-init">jira-cli config init</a>
+      <a href="#jira-cli-config-path">jira-cli config path</a>
+      <a href="#jira-cli-config-show">jira-cli config show</a>
+      <a href="#jira-cli-config-use-context">jira-cli config use-context</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">doctor</div>
+      <a href="#jira-cli-doctor">jira-cli doctor</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">issue</div>
+      <a href="#jira-cli-issue">jira-cli issue</a>
+      <a href="#jira-cli-issue-assign">jira-cli issue assign</a>
+      <a href="#jira-cli-issue-create">jira-cli issue create</a>
+      <a href="#jira-cli-issue-edit">jira-cli issue edit</a>
+      <a href="#jira-cli-issue-get">jira-cli issue get</a>
+      <a href="#jira-cli-issue-search">jira-cli issue search</a>
+      <a href="#jira-cli-issue-transition">jira-cli issue transition</a>
+      <a href="#jira-cli-issue-transitions">jira-cli issue transitions</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">project</div>
+      <a href="#jira-cli-project">jira-cli project</a>
+      <a href="#jira-cli-project-get">jira-cli project get</a>
+      <a href="#jira-cli-project-list">jira-cli project list</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">skill</div>
+      <a href="#jira-cli-skill">jira-cli skill</a>
+      <a href="#jira-cli-skill-install">jira-cli skill install</a>
+      <a href="#jira-cli-skill-path">jira-cli skill path</a>
+      <a href="#jira-cli-skill-show">jira-cli skill show</a>
+      <a href="#jira-cli-skill-status">jira-cli skill status</a>
+      <a href="#jira-cli-skill-uninstall">jira-cli skill uninstall</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">user</div>
+      <a href="#jira-cli-user">jira-cli user</a>
+      <a href="#jira-cli-user-me">jira-cli user me</a>
+      <a href="#jira-cli-user-resolve">jira-cli user resolve</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">version</div>
+      <a href="#jira-cli-version">jira-cli version</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">whoami</div>
+      <a href="#jira-cli-whoami">jira-cli whoami</a>
+      </div>
+    
+  </aside>
+  <main class="cli-main">
+    <span class="eyebrow">Reference</span>
+    <h1>CLI reference</h1>
+    <p class="lead">jira-cli reads and searches Jira issues via JQL, creates and edits
+issues, moves them through workflow transitions, and manages comments.
+It supports Jira Cloud and Data Center / Server, and emits agent-friendly
+JSON with structured errors.
+
+AGENT NOTE: a companion Skill (&#34;jira&#34;) carries the canonical usage,
+safety modes, and env setup and is the source of truth for driving this CLI.
+If you are an agent, load that Skill before composing commands. Check status
+with `jira-cli skill status`; install it with `jira-cli skill install`.</p>
+    <p class="lead">Generated from the command tree, so it always matches <code>--help</code>.</p>
+
+    <section class="cmd">
+      <h2>Global flags</h2>
+      <p class="short">Persistent flags accepted by every command.</p>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--allow-writes</code></td><td><code>false</code></td><td>override read-only mode (defaults.read_only / JIRA_CLI_READ_ONLY) for this invocation</td></tr>
+        <tr><td><code>--base-url</code></td><td></td><td>Jira site URL (overrides config)</td></tr>
+        <tr><td><code>--config</code></td><td></td><td>config directory (default ~/.angelmsger/jira)</td></tr>
+        <tr><td><code>--fields</code></td><td></td><td>comma-separated dot-path fields to keep</td></tr>
+        <tr><td><code>--flavor</code></td><td></td><td>backend flavor: cloud, datacenter or auto</td></tr>
+        <tr><td><code>--format, -f</code></td><td></td><td>output format: json, table or ndjson</td></tr>
+        <tr><td><code>--pretty</code></td><td><code>false</code></td><td>human-friendly mode for interactive terminal use only (agents/scripts should omit): TUI in `config init`, colorized JSON elsewhere; errors without a TTY</td></tr>
+        <tr><td><code>--timeout</code></td><td></td><td>request timeout, e.g. 30s</td></tr>
+        <tr><td><code>--use-context</code></td><td></td><td>use a named context for this invocation</td></tr>
+        <tr><td><code>--verbose, -v</code></td><td><code>false</code></td><td>verbose diagnostics on stderr</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    
+    <section class="cmd" id="jira-cli-auth">
+      <h2>jira-cli auth</h2>
+      <p class="short">Inspect and manage stored credentials</p>
+      <pre>jira-cli auth</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-auth-login">
+      <h2>jira-cli auth login</h2>
+      <p class="short">Store a credential for the configured server</p>
+      <pre>jira-cli auth login</pre>
+      <p class="long">Prompt for a secret and store it securely. Run `config init` first if the server URL is not set.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli auth login
+  jira-cli --use-context staging auth login</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-auth-logout">
+      <h2>jira-cli auth logout</h2>
+      <p class="short">Remove the stored credential for the configured server</p>
+      <pre>jira-cli auth logout</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-auth-status">
+      <h2>jira-cli auth status</h2>
+      <p class="short">Show whether a usable credential is configured</p>
+      <pre>jira-cli auth status</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-comment">
+      <h2>jira-cli comment</h2>
+      <p class="short">Read and post issue comments</p>
+      <pre>jira-cli comment</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-comment-add">
+      <h2>jira-cli comment add</h2>
+      <p class="short">Post a comment on an issue</p>
+      <pre>jira-cli comment add &lt;issue-key|url&gt; [flags]</pre>
+      <p class="long">Post a comment. Bodies are plain text on both flavors: on Cloud the
+text becomes ADF paragraphs, on Data Center it is sent verbatim (wiki
+markup is rendered server-side).</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--body</code></td><td></td><td>comment body text</td></tr>
+        <tr><td><code>--body-file</code></td><td></td><td>read body from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli comment add PROJ-123 --body &#34;Deployed to staging.&#34;
+  echo &#34;Done.&#34; | jira-cli comment add PROJ-123 --body-file -</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-comment-delete">
+      <h2>jira-cli comment delete</h2>
+      <p class="short">Delete one or more comments</p>
+      <pre>jira-cli comment delete &lt;comment-id&gt;... --issue &lt;key&gt; [flags]</pre>
+      <p class="long">Delete a comment by ID. Pass several IDs to delete them in one run, or
+a single &#39;-&#39; to read newline-separated IDs from stdin. Deletion requires
+--yes (or an interactive confirmation when stdin is a terminal); --yes
+applies to the whole batch.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--issue</code></td><td></td><td>the issue the comments belong to (required)</td></tr>
+        <tr><td><code>--yes</code></td><td><code>false</code></td><td>skip the deletion confirmation</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli comment delete 10042 --issue PROJ-123 --yes
+  jira-cli comment delete 10042 10043 --issue PROJ-123 --yes</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-comment-list">
+      <h2>jira-cli comment list</h2>
+      <p class="short">List an issue&#39;s comments (oldest first)</p>
+      <pre>jira-cli comment list &lt;issue-key|url&gt; [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli comment list PROJ-123
+  jira-cli comment list PROJ-123 --all</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-comment-update">
+      <h2>jira-cli comment update</h2>
+      <p class="short">Replace a comment&#39;s body</p>
+      <pre>jira-cli comment update &lt;comment-id&gt; --issue &lt;key&gt; [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--body</code></td><td></td><td>new comment body text</td></tr>
+        <tr><td><code>--body-file</code></td><td></td><td>read body from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--issue</code></td><td></td><td>the issue the comment belongs to (required)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli comment update 10042 --issue PROJ-123 --body &#34;Revised.&#34;
+  echo &#34;Revised.&#34; | jira-cli comment update 10042 --issue PROJ-123 --body-file -</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-config">
+      <h2>jira-cli config</h2>
+      <p class="short">Manage jira-cli configuration</p>
+      <pre>jira-cli config</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-delete-context">
+      <h2>jira-cli config delete-context</h2>
+      <p class="short">Delete a context and its stored credential</p>
+      <pre>jira-cli config delete-context &lt;name&gt;</pre>
+      
+      
+      <h3>Examples</h3><pre>  jira-cli config delete-context staging</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-get-contexts">
+      <h2>jira-cli config get-contexts</h2>
+      <p class="short">List the configured contexts</p>
+      <pre>jira-cli config get-contexts</pre>
+      <p class="long">List every context in the config file. The current context — the one
+used when --use-context is not given — is marked.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli config get-contexts
+  jira-cli config get-contexts --format table</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-init">
+      <h2>jira-cli config init</h2>
+      <p class="short">Interactively set up server URL and credentials</p>
+      <pre>jira-cli config init</pre>
+      <p class="long">Run the interactive setup wizard. It collects a server URL, detects
+the flavor, validates a credential and stores it. The wizard can also
+configure additional named contexts for working with several servers.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli config init --pretty   # interactive TUI (recommended)
+  jira-cli config init             # plain line-by-line wizard (scripts, non-TTY)</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-path">
+      <h2>jira-cli config path</h2>
+      <p class="short">Print the config file path</p>
+      <pre>jira-cli config path</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-show">
+      <h2>jira-cli config show</h2>
+      <p class="short">Show the resolved configuration</p>
+      <pre>jira-cli config show [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--explain</code></td><td><code>false</code></td><td>annotate each value with its source</td></tr>
+        </tbody>
+      </table>
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-config-use-context">
+      <h2>jira-cli config use-context</h2>
+      <p class="short">Switch the current context</p>
+      <pre>jira-cli config use-context &lt;name&gt;</pre>
+      <p class="long">Set the current context — the server used by default. Override it for
+a single command with the global --use-context flag instead.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli config use-context staging</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-doctor">
+      <h2>jira-cli doctor</h2>
+      <p class="short">Diagnose configuration, credentials and connectivity</p>
+      <pre>jira-cli doctor [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--no-update-check</code></td><td><code>false</code></td><td>skip the check for a newer jira-cli release</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli doctor
+  jira-cli doctor --no-update-check</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue">
+      <h2>jira-cli issue</h2>
+      <p class="short">Read, search and write Jira issues</p>
+      <pre>jira-cli issue</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-assign">
+      <h2>jira-cli issue assign</h2>
+      <p class="short">Change or clear an issue&#39;s assignee</p>
+      <pre>jira-cli issue assign &lt;key|url&gt; [flags]</pre>
+      <p class="long">Assign an issue. --to accepts a Cloud accountId, a Data Center
+username, or a display-name/email query resolved to a unique user
+(see `jira-cli user resolve`).</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--to</code></td><td></td><td>the new assignee</td></tr>
+        <tr><td><code>--unassign</code></td><td><code>false</code></td><td>clear the assignee</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue assign PROJ-123 --to alice@example.com
+  jira-cli issue assign PROJ-123 --unassign</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-create">
+      <h2>jira-cli issue create</h2>
+      <p class="short">Create an issue</p>
+      <pre>jira-cli issue create [flags]</pre>
+      <p class="long">Create an issue. --project falls back to defaults.project when
+configured. Descriptions are plain text on both flavors; on Cloud the
+text becomes ADF paragraphs, on Data Center it is sent verbatim (wiki
+markup is rendered server-side).</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--assignee</code></td><td></td><td>assignee (accountId, username, or display-name/email query)</td></tr>
+        <tr><td><code>--description</code></td><td></td><td>description text</td></tr>
+        <tr><td><code>--description-file</code></td><td></td><td>read the description from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--label</code></td><td><code>[]</code></td><td>label to set (repeatable)</td></tr>
+        <tr><td><code>--parent</code></td><td></td><td>parent issue key (for subtasks / epic children)</td></tr>
+        <tr><td><code>--priority</code></td><td></td><td>priority name (e.g. High)</td></tr>
+        <tr><td><code>--project</code></td><td></td><td>project key (default from defaults.project)</td></tr>
+        <tr><td><code>--summary</code></td><td></td><td>issue summary (required)</td></tr>
+        <tr><td><code>--type</code></td><td><code>Task</code></td><td>issue type name (e.g. Task, Bug, Story)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue create --project ENG --type Task --summary &#34;Fix login crash&#34;
+  jira-cli issue create --project ENG --type Bug --summary &#34;...&#34; \
+      --description-file report.txt --assignee alice@example.com --label urgent</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-edit">
+      <h2>jira-cli issue edit</h2>
+      <p class="short">Update issue fields</p>
+      <pre>jira-cli issue edit &lt;key|url&gt; [flags]</pre>
+      <p class="long">Update an issue&#39;s summary, description, priority or labels. Only the
+flags you pass change; everything else keeps its value.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--add-label</code></td><td><code>[]</code></td><td>label to add (repeatable)</td></tr>
+        <tr><td><code>--description</code></td><td></td><td>new description text</td></tr>
+        <tr><td><code>--description-file</code></td><td></td><td>read the new description from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--priority</code></td><td></td><td>new priority name</td></tr>
+        <tr><td><code>--remove-label</code></td><td><code>[]</code></td><td>label to remove (repeatable)</td></tr>
+        <tr><td><code>--summary</code></td><td></td><td>new summary</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue edit PROJ-123 --summary &#34;New title&#34;
+  jira-cli issue edit PROJ-123 --add-label triaged --remove-label urgent</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-get">
+      <h2>jira-cli issue get</h2>
+      <p class="short">Show one issue</p>
+      <pre>jira-cli issue get &lt;key|url&gt; [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--expand</code></td><td></td><td>extra sections to request, comma-separated (e.g. changelog)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue get PROJ-123
+  jira-cli issue get https://acme.atlassian.net/browse/PROJ-123</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-search">
+      <h2>jira-cli issue search</h2>
+      <p class="short">Search issues with JQL or filter flags</p>
+      <pre>jira-cli issue search [jql] [flags]</pre>
+      <p class="long">Search issues. Pass a raw JQL string, or compose one from filter flags
+(--project, --assignee, --status, --type, --label, --text; AND-joined).
+--assignee/--reporter accept &#34;me&#34; (the authenticated user) and
+&#34;unassigned&#34;.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--assignee</code></td><td></td><td>filter by assignee (&#34;me&#34;, &#34;unassigned&#34;, or a user)</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--field</code></td><td><code>[]</code></td><td>issue fields to return (repeatable; default is a curated set)</td></tr>
+        <tr><td><code>--label</code></td><td></td><td>filter by label</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        <tr><td><code>--order-by</code></td><td></td><td>sort clause, e.g. &#34;updated DESC&#34;</td></tr>
+        <tr><td><code>--project</code></td><td></td><td>filter by project key</td></tr>
+        <tr><td><code>--reporter</code></td><td></td><td>filter by reporter (&#34;me&#34; or a user)</td></tr>
+        <tr><td><code>--status</code></td><td></td><td>filter by status name</td></tr>
+        <tr><td><code>--text</code></td><td></td><td>free-text match</td></tr>
+        <tr><td><code>--type</code></td><td></td><td>filter by issue type name</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue search &#39;project = ENG AND status = &#34;In Progress&#34;&#39;
+  jira-cli issue search --project ENG --assignee me --order-by &#34;updated DESC&#34;
+  jira-cli issue search --text &#34;login crash&#34; --all</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-transition">
+      <h2>jira-cli issue transition</h2>
+      <p class="short">Move an issue through a workflow transition</p>
+      <pre>jira-cli issue transition &lt;key|url&gt; --to &lt;name-or-id&gt; [flags]</pre>
+      <p class="long">Transition an issue. --to accepts a transition ID or name (matched
+case-insensitively against the transitions currently available; see
+`issue transitions`). Target status names also match when unambiguous.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--comment</code></td><td></td><td>comment to add as part of the transition</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--to</code></td><td></td><td>target transition name or ID</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli issue transition PROJ-123 --to &#34;In Progress&#34;
+  jira-cli issue transition PROJ-123 --to 31 --comment &#34;Deployed to staging.&#34;</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-issue-transitions">
+      <h2>jira-cli issue transitions</h2>
+      <p class="short">List the workflow transitions currently available on an issue</p>
+      <pre>jira-cli issue transitions &lt;key|url&gt;</pre>
+      <p class="long">List the transitions the issue can take from its current status —
+the values `issue transition --to` accepts.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli issue transitions PROJ-123</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-project">
+      <h2>jira-cli project</h2>
+      <p class="short">Browse Jira projects</p>
+      <pre>jira-cli project</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-project-get">
+      <h2>jira-cli project get</h2>
+      <p class="short">Show one project</p>
+      <pre>jira-cli project get &lt;key|url&gt;</pre>
+      
+      
+      <h3>Examples</h3><pre>  jira-cli project get ENG</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-project-list">
+      <h2>jira-cli project list</h2>
+      <p class="short">List projects visible to the authenticated user</p>
+      <pre>jira-cli project list [flags]</pre>
+      <p class="long">List projects. On Jira Cloud the listing paginates and --query filters
+server-side; on Data Center the API returns every project in one
+response (a single page) and --query filters client-side.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        <tr><td><code>--query</code></td><td></td><td>filter by name/key substring</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli project list
+  jira-cli project list --query platform</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill">
+      <h2>jira-cli skill</h2>
+      <p class="short">Install the companion Skill for coding agents (Claude Code, Codex)</p>
+      <pre>jira-cli skill</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill-install">
+      <h2>jira-cli skill install</h2>
+      <p class="short">Deploy the embedded Skill into a coding agent&#39;s skills directory</p>
+      <pre>jira-cli skill install [flags]</pre>
+      <p class="long">Write the companion `jira` Skill — bundled inside this binary —
+into a coding agent&#39;s skills directory. With no flags it probes for
+installed agents (Claude Code, Codex) and installs into each one found.
+Re-run it after upgrading the CLI to refresh the Skill to the matching
+version.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--agent</code></td><td><code>[]</code></td><td>target agents instead of auto-detecting (claude-code, codex)</td></tr>
+        <tr><td><code>--dir</code></td><td></td><td>explicit skills base directory; installs into &lt;dir&gt;/jira</td></tr>
+        <tr><td><code>--project</code></td><td><code>false</code></td><td>install into the project (./.claude/skills, ./.agents/skills) instead of $HOME</td></tr>
+        </tbody>
+      </table>
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill-path">
+      <h2>jira-cli skill path</h2>
+      <p class="short">Print where the Skill would be installed, and whether it is</p>
+      <pre>jira-cli skill path [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--agent</code></td><td><code>[]</code></td><td>limit to specific agents (claude-code, codex)</td></tr>
+        <tr><td><code>--dir</code></td><td></td><td>explicit skills base directory</td></tr>
+        <tr><td><code>--project</code></td><td><code>false</code></td><td>use the project skills directories instead of $HOME</td></tr>
+        </tbody>
+      </table>
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill-show">
+      <h2>jira-cli skill show</h2>
+      <p class="short">Print the embedded SKILL.md to stdout</p>
+      <pre>jira-cli skill show</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill-status">
+      <h2>jira-cli skill status</h2>
+      <p class="short">Report whether the companion Skill is loaded and installed</p>
+      <pre>jira-cli skill status [flags]</pre>
+      
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--project</code></td><td><code>false</code></td><td>check the project skills dirs (./.claude/skills, ./.agents/skills) instead of $HOME</td></tr>
+        </tbody>
+      </table>
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-skill-uninstall">
+      <h2>jira-cli skill uninstall</h2>
+      <p class="short">Remove the companion Skill from a coding agent&#39;s skills directory</p>
+      <pre>jira-cli skill uninstall [flags]</pre>
+      <p class="long">Delete a previously installed `jira` Skill. With no flags it
+probes for installed agents (Claude Code, Codex) and removes the Skill
+from each one found.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--agent</code></td><td><code>[]</code></td><td>target agents instead of auto-detecting (claude-code, codex)</td></tr>
+        <tr><td><code>--dir</code></td><td></td><td>explicit skills base directory; removes &lt;dir&gt;/jira</td></tr>
+        <tr><td><code>--project</code></td><td><code>false</code></td><td>remove from the project (./.claude/skills, ./.agents/skills) instead of $HOME</td></tr>
+        </tbody>
+      </table>
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-user">
+      <h2>jira-cli user</h2>
+      <p class="short">Discover Jira users — the values assignee flags accept</p>
+      <pre>jira-cli user</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-user-me">
+      <h2>jira-cli user me</h2>
+      <p class="short">Print the user the configured credentials authenticate as (alias for whoami)</p>
+      <pre>jira-cli user me</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-user-resolve">
+      <h2>jira-cli user resolve</h2>
+      <p class="short">Resolve a user selector to a unique user</p>
+      <pre>jira-cli user resolve &lt;selector&gt;</pre>
+      <p class="long">Resolve a user selector to a unique user.
+
+Cloud: an accountId is passed through; anything else is searched by
+display name / email and must match exactly one active user.
+DC:    the selector is the username and is echoed back verbatim.</p>
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-version">
+      <h2>jira-cli version</h2>
+      <p class="short">Print version information</p>
+      <pre>jira-cli version</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-whoami">
+      <h2>jira-cli whoami</h2>
+      <p class="short">Print the user the configured credentials authenticate as</p>
+      <pre>jira-cli whoami</pre>
+      
+      
+      <h3>Examples</h3><pre>  jira-cli whoami</pre>
+    </section>
+    
+  </main>
+</div>
+<footer class="footer">
+  <div class="wrap">
+    <span class="brand-foot">jira-cli — MIT License</span>
+    <span>Developer: <a href="https://angelmsger.github.io/">AngelMsger</a> · <a href="https://github.com/angelmsger/jira-cli">GitHub</a></span>
+  </div>
+</footer>
+</body>
+</html>

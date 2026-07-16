@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jira-cli — read and write Jira from your terminal</title>
+<meta name="description" content="A command-line tool that lets coding agents drive Jira issue-tracking workflows — read and search issues via JQL, create, edit, assign and transition them, and manage comments. Jira Cloud and Data Center.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="canonical" href="https://angelmsger.github.io/jira-cli/">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">jira-cli</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="#commands">Commands</a>
+      <a class="is-cli" href="cli/">CLI reference</a>
+      <a href="#guides">Guides</a>
+      <a href="https://github.com/AngelMsger/jira-cli">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1 class="reveal d1">jira-cli<span class="cursor"></span></h1>
+    <p class="tagline reveal d2">Read and write Jira from your terminal — built for coding agents, designed for humans.</p>
+    <div class="pills reveal d3">
+      <span class="pill">Jira Cloud</span>
+      <span class="pill">Data Center / Server</span>
+      <span class="pill">Built for agents</span>
+    </div>
+    <div class="cta reveal d4">
+      <a class="btn btn-primary" href="#install">Get started</a>
+      <a class="btn btn-ghost" href="cli/">Browse the CLI reference →</a>
+      <a class="btn btn-ghost" href="https://github.com/AngelMsger/jira-cli">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Capabilities</span>
+      <h2>One CLI for the whole issue tracker</h2>
+      <p class="lead">Read, search and update Jira issues — with output a coding agent can act on.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></div>
+        <h3>JQL search</h3>
+        <p>Query with raw JQL, or build one from filter flags: project, assignee, status, type, label and free text — with <code>me</code> and <code>unassigned</code> conveniences.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M14.5 5.5l4 4L8 20H4v-4z"/><path d="M12.5 7.5l4 4"/></svg></div>
+        <h3>Create &amp; edit issues</h3>
+        <p>Create, edit and assign issues in plain text — the ADF asymmetry between Cloud and Data Center is bridged for you — and preview any write with <code>--dry-run</code>.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M8 13h8M8 17h5"/></svg></div>
+        <h3>Workflow transitions</h3>
+        <p>Discover what an issue can do right now, then move it — by transition name or ID, with candidate lists on ambiguity.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></div>
+        <h3>Comments</h3>
+        <p>Read issue comments and post, edit or delete them — deletion gated behind <code>--yes</code>.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
+        <h3>Multiple servers</h3>
+        <p>kubectl-style named contexts in one config file. Switch the current server, or override per command with <code>--use-context</code>.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13 5l-2 14"/></svg></div>
+        <h3>Agent-first output</h3>
+        <p>JSON by default, with structured errors — categories, exit codes and recovery hints a coding agent can branch on.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+        <h3>Secure credentials</h3>
+        <p>Tokens live in the OS keychain, with a per-user DPAPI fallback on Windows and a <code>0600</code> fallback on macOS/Linux — never in the config file.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1 0-8 6 6 0 0 1 11.5-1.5A3.5 3.5 0 0 1 18 18z"/></svg></div>
+        <h3>Cloud &amp; Data Center</h3>
+        <p>One flavor-agnostic client; the backend — Cloud or Data Center / Server — is detected automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="install">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Install</span>
+      <h2>Up and running in a minute</h2>
+      <p class="lead">Install with npm, then finish setup in two steps — deploy the Skill, then turn on shell completion.</p>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">install</span></div>
+<pre><span class="c"># recommended — fetches the prebuilt binary for your platform</span>
+npm install -g @angelmsger/jira-cli</pre>
+    </div>
+    <p style="margin-top:14px;color:var(--muted)">Other methods — <code>go install</code>, a source build, or a prebuilt binary from the
+      <a href="https://github.com/AngelMsger/jira-cli/releases">Releases page</a> — are in the
+      <a href="https://github.com/AngelMsger/jira-cli/blob/main/docs/installation.md">installation guide</a>.</p>
+    <p class="lead" style="margin-top:30px">Then finish setup:</p>
+    <div class="grid grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>1 · Companion Skill</h3>
+        <p style="margin:6px 0 12px">A <code>jira</code> Skill is embedded in the binary. It detects your coding agent — Claude Code, Codex — and installs for each:</p>
+        <div class="term"><div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+<pre><span class="p">$</span> jira-cli skill install</pre></div>
+      </div>
+      <div class="card">
+        <h3>2 · Shell completion</h3>
+        <p style="margin:6px 0 12px">Completes subcommands, flag values and live project keys. Load it once:</p>
+        <div class="term"><div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+<pre><span class="p">$</span> source &lt;(jira-cli completion bash)</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="quickstart">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Quick start</span>
+      <h2>Configure once, then work the backlog</h2>
+      <p class="lead">Set up a server, then read and write from the terminal.</p>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">a typical session</span></div>
+<pre><span class="c"># interactive TUI setup, then verify connectivity</span>
+<span class="p">$</span> jira-cli config init --pretty
+<span class="p">$</span> jira-cli doctor
+
+<span class="c"># find an issue, then read it</span>
+<span class="p">$</span> jira-cli issue search --project ENG --assignee me
+<span class="p">$</span> jira-cli issue get PROJ-123
+
+<span class="c"># move it through the workflow, preview before sending</span>
+<span class="p">$</span> jira-cli issue transitions PROJ-123
+<span class="p">$</span> jira-cli issue transition PROJ-123 --to "In Progress" --dry-run</pre>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="commands">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Commands</span>
+      <h2>The command surface</h2>
+      <p class="lead">Eight command groups. Every flag and example lives in the full CLI reference.</p>
+    </div>
+    <div class="grid grid-3">
+      <a class="card cmd-group" href="cli/#jira-cli-issue">
+        <span class="cg-name">issue</span>
+        <p>Get, search (JQL), create, edit, assign and transition issues.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-project">
+        <span class="cg-name">project</span>
+        <p>List and inspect Jira projects.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-comment">
+        <span class="cg-name">comment</span>
+        <p>Read, post, edit and delete issue comments.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-user">
+        <span class="cg-name">user</span>
+        <p>Resolve user selectors to the identifiers assignee flags accept.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-config">
+        <span class="cg-name">config</span>
+        <p>Setup wizard, plus multi-server context management.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-auth">
+        <span class="cg-name">auth</span>
+        <p>Inspect and manage stored credentials.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-doctor">
+        <span class="cg-name">doctor</span>
+        <p>Diagnose configuration, credentials and connectivity.</p>
+      </a>
+    </div>
+    <div class="cta" style="justify-content:flex-start;margin-top:26px">
+      <a class="btn btn-primary" href="cli/">Open the full CLI reference →</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="guides">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Guides</span>
+      <h2>Go deeper</h2>
+      <p class="lead">Longer-form documentation, rendered on GitHub.</p>
+    </div>
+    <div class="grid grid-3">
+      <a class="card" href="https://github.com/AngelMsger/jira-cli/blob/main/docs/installation.md">
+        <h3>Installation &amp; setup →</h3>
+        <p>Every install method, shell completion, and deploying the Skill.</p>
+      </a>
+      <a class="card" href="https://github.com/AngelMsger/jira-cli/blob/main/docs/technical-design.md">
+        <h3>Technical design →</h3>
+        <p>Architecture, the flavor-agnostic API client, error model and the ADF bridge.</p>
+      </a>
+      <a class="card" href="https://github.com/AngelMsger/jira-cli/blob/main/docs/releasing.md">
+        <h3>Releasing →</h3>
+        <p>How releases are cut and published to GitHub and npm.</p>
+      </a>
+      <a class="card" href="https://github.com/AngelMsger/jira-cli/tree/main/skills/jira">
+        <h3>Companion Skill →</h3>
+        <p>The <code>jira</code> Skill that teaches a coding agent the CLI.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span class="brand-foot">jira-cli — MIT License</span>
+    <span>Sister CLIs: <a href="https://angelmsger.github.io/bitbucket-cli/">bitbucket-cli</a> · <a href="https://angelmsger.github.io/confluence-cli/">confluence-cli</a> · <a href="https://angelmsger.github.io/openobserve-cli/">openobserve-cli</a> · <a href="https://angelmsger.github.io/jenkins-cli/">jenkins-cli</a> · <a href="https://github.com/AngelMsger">more →</a></span>
+    <span>Developer: <a href="https://angelmsger.github.io/">AngelMsger</a> · <a href="https://github.com/AngelMsger/jira-cli">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

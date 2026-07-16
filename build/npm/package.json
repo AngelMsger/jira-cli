@@ -1,0 +1,44 @@
+{
+  "name": "@angelmsger/jira-cli",
+  "version": "0.1.0",
+  "description": "Drive Jira issue-tracking workflows from the command line, built for coding agents: read and search issues via JQL, create/edit/assign/transition them, and manage comments across Cloud and Data Center.",
+  "keywords": [
+    "jira",
+    "cli",
+    "issues",
+    "agent",
+    "claude",
+    "jql"
+  ],
+  "homepage": "https://angelmsger.github.io/jira-cli/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AngelMsger/jira-cli.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "jira-cli": "bin/jira-cli.js"
+  },
+  "main": "install.js",
+  "scripts": {
+    "postinstall": "node install.js",
+    "test": "node --test install.test.js"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}
