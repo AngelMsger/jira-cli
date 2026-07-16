@@ -20,6 +20,7 @@ test('rejects unsupported Windows architectures', () => {
 });
 
 test('welcome text recommends valid Jira commands', () => {
-  assert.match(welcomeText(), /jira-cli search/);
-  assert.match(welcomeText(), /jira-cli page get/);
+  assert.match(welcomeText(), /jira-cli issue search/);
+  assert.match(welcomeText(), /jira-cli issue get/);
+  assert.doesNotMatch(welcomeText(), /jira-cli (search|page)/);
 });
