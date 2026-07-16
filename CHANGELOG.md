@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-16
+
 ### Added
 
 - Family-style hero image (`docs/image.png`), shown in the README and in the
@@ -63,3 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   out of scope for v0.1.
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
+
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/AngelMsger/jira-cli/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/AngelMsger/jira-cli/releases/tag/v0.1.0
