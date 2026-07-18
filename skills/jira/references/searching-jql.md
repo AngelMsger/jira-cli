@@ -40,6 +40,19 @@ Flag → JQL mapping:
 With no flags at all, `defaults.project` / `JIRA_DEFAULT_PROJECT` (when
 configured) scopes the search to that project.
 
+## Valid values
+
+JQL silently matches nothing when a value does not exist (`component =
+"Paas"` vs `"PaaS"`). When composing clauses over components, versions,
+statuses, types, priorities or labels from a user's loose phrasing, discover
+the exact values first — see
+[discovering-metadata.md](discovering-metadata.md):
+
+```bash
+jira-cli project components ENG     # then: component = "PaaS"
+jira-cli project statuses ENG       # then: status = "In Progress"
+```
+
 ## Fields
 
 Results carry a curated field set (summary, status, assignee, reporter, type,

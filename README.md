@@ -129,6 +129,9 @@ are never written to the config file.
 | `issue assign` | change or clear the assignee (`--to` / `--unassign`) |
 | `issue transitions` / `issue transition` | discover and run workflow transitions |
 | `project list` / `project get` | browse projects |
+| `project components` / `versions` / `issuetypes` / `statuses` | discover a project's valid field values: components, versions, creatable issue types, workflow statuses |
+| `priority list` / `label list` | instance-wide priorities and labels (label listing is Jira Cloud only) |
+| `field list` / `field options` | generic create-screen field discovery, incl. a custom select field's allowed values per project + issue type context |
 | `comment list` / `add` / `update` / `delete` | read, post, edit and remove comments; `delete` needs `--yes` |
 | `whoami` | print the user the credentials authenticate as |
 | `user resolve` / `user me` | resolve a user selector to the identifier assignee flags accept |

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Metadata discovery: enumerate the valid values of issue fields.** The CLI
+  could validate a known value through JQL but not tell an agent what values
+  exist — the normalized issue even dropped an explicitly requested
+  `components` field. New commands close the gap:
+  - `project components` / `project versions` / `project issuetypes` /
+    `project statuses` list a project's components, fix/affects versions,
+    creatable issue types (from the create metadata, so permissions apply) and
+    workflow statuses per issue type.
+  - `priority list` and `label list` cover the instance-wide value sets
+    (`label list` is Jira Cloud only — Data Center has no label-listing
+    endpoint; the DC error says how to discover labels from search results).
+  - `field list --project --type` and `field options <field> --project
+    [--type]` are the generic form: create-screen field metadata and any
+    constrained field's allowed values — including `customfield_*` select
+    fields — honoring Jira field contexts. Without `--type`, every creatable
+    issue type is scanned and each option is annotated with the issue types it
+    applies to.
+- Normalized issues now carry `components`, `fix_versions` and
+  `affects_versions` (name arrays); search results include components and
+  fixVersions in the default field set, and an explicitly requested
+  `--field components` is no longer dropped by the mapper.
+- Two new capability-table rows record the flavor divergences: label listing
+  (unsupported on DC) and metadata-list pagination (DC returns components,
+  versions and priorities as one full-list response).
+
 ## [0.1.1] - 2026-07-16
 
 ### Added

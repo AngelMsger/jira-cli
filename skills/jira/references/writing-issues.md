@@ -15,7 +15,10 @@ jira-cli issue create --project ENG --type Bug --summary "..." \
 
 - `--project` falls back to `defaults.project` / `JIRA_DEFAULT_PROJECT`.
 - `--type` is the issue type *name* (`Task`, `Bug`, `Story`, ...); it must
-  exist in the project. The server rejects unknown types with a field error.
+  exist in the project. Discover the valid names with
+  `jira-cli project issuetypes ENG`, and priorities with
+  `jira-cli priority list` (see
+  [discovering-metadata.md](discovering-metadata.md)).
 - `--parent` places the issue under an epic, or makes a subtask when `--type`
   is a subtask type.
 - The created issue is re-read and printed in full, so the output carries the

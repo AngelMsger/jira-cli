@@ -41,6 +41,14 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | --- | --- |
 | [`jira-cli doctor`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-doctor) | Diagnose configuration, credentials and connectivity |
 
+## field
+
+| Command | Description |
+| --- | --- |
+| [`jira-cli field`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-field) | Discover issue fields and their allowed values |
+| [`jira-cli field list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-field-list) | List the fields on an issue type's create screen |
+| [`jira-cli field options`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-field-options) | List a field's allowed values in a project |
+
 ## issue
 
 | Command | Description |
@@ -54,13 +62,31 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | [`jira-cli issue transition`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-issue-transition) | Move an issue through a workflow transition |
 | [`jira-cli issue transitions`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-issue-transitions) | List the workflow transitions currently available on an issue |
 
+## label
+
+| Command | Description |
+| --- | --- |
+| [`jira-cli label`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-label) | Browse issue labels |
+| [`jira-cli label list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-label-list) | List issue labels (Jira Cloud only) |
+
+## priority
+
+| Command | Description |
+| --- | --- |
+| [`jira-cli priority`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-priority) | Browse issue priorities |
+| [`jira-cli priority list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-priority-list) | List issue priorities |
+
 ## project
 
 | Command | Description |
 | --- | --- |
 | [`jira-cli project`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project) | Browse Jira projects |
+| [`jira-cli project components`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-components) | List a project's components |
 | [`jira-cli project get`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-get) | Show one project |
+| [`jira-cli project issuetypes`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-issuetypes) | List the issue types creatable in a project |
 | [`jira-cli project list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-list) | List projects visible to the authenticated user |
+| [`jira-cli project statuses`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-statuses) | List a project's workflow statuses per issue type |
+| [`jira-cli project versions`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-project-versions) | List a project's versions |
 
 ## skill
 

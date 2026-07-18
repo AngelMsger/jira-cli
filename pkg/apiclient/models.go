@@ -82,10 +82,15 @@ type Issue struct {
 	Assignee    *User    `json:"assignee,omitempty"`
 	Reporter    *User    `json:"reporter,omitempty"`
 	Labels      []string `json:"labels,omitempty"`
-	ParentKey   string   `json:"parent_key,omitempty"`
-	Created     string   `json:"created,omitempty"`
-	Updated     string   `json:"updated,omitempty"`
-	URL         string   `json:"url,omitempty"`
+	// Components, FixVersions and AffectsVersions carry the item names; use
+	// `project components` / `project versions` to discover the valid values.
+	Components      []string `json:"components,omitempty"`
+	FixVersions     []string `json:"fix_versions,omitempty"`
+	AffectsVersions []string `json:"affects_versions,omitempty"`
+	ParentKey       string   `json:"parent_key,omitempty"`
+	Created         string   `json:"created,omitempty"`
+	Updated         string   `json:"updated,omitempty"`
+	URL             string   `json:"url,omitempty"`
 }
 
 // Comment is a normalized issue comment. Body carries plain text (ADF is
@@ -106,6 +111,92 @@ type Transition struct {
 	Name string `json:"name"`
 	// To is the status the transition leads to.
 	To *Status `json:"to,omitempty"`
+}
+
+// Component is a project component — a valid value for an issue's
+// "components" field within that project.
+type Component struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Lead        string `json:"lead,omitempty"`
+}
+
+// Version is a project version — a valid value for an issue's fixVersions /
+// affects-versions fields within that project.
+type Version struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Released    bool   `json:"released"`
+	Archived    bool   `json:"archived"`
+	StartDate   string `json:"start_date,omitempty"`
+	ReleaseDate string `json:"release_date,omitempty"`
+}
+
+// IssueType is an issue type that can be created in a project.
+type IssueType struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Subtask     bool   `json:"subtask"`
+}
+
+// Priority is an issue priority level.
+type Priority struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// IssueTypeStatuses groups the workflow statuses valid for one issue type of a
+// project. The same status often appears under several issue types.
+type IssueTypeStatuses struct {
+	IssueTypeID string   `json:"issue_type_id"`
+	IssueType   string   `json:"issue_type"`
+	Statuses    []Status `json:"statuses"`
+}
+
+// FieldOption is one allowed value of a constrained field. Value carries the
+// option's display value (the option "value" or "name", whichever the field
+// type uses on the wire).
+type FieldOption struct {
+	ID    string `json:"id,omitempty"`
+	Value string `json:"value"`
+}
+
+// FieldMeta describes one field on an issue type's create screen: whether it
+// is required, its schema, and — for constrained fields such as components,
+// versions, priority and select-list custom fields — its allowed values in
+// this project + issue type context.
+type FieldMeta struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	Required   bool     `json:"required"`
+	Type       string   `json:"type,omitempty"`  // schema type, e.g. "array", "option", "priority"
+	Items      string   `json:"items,omitempty"` // element type for arrays, e.g. "component"
+	Custom     string   `json:"custom,omitempty"`
+	Operations []string `json:"operations,omitempty"`
+	HasDefault bool     `json:"has_default,omitempty"`
+	// OptionsCount is len(AllowedValues); it survives when a presentation
+	// layer trims the values themselves (see `field list`).
+	OptionsCount  int           `json:"options_count,omitempty"`
+	AllowedValues []FieldOption `json:"allowed_values,omitempty"`
+}
+
+// ProjectItemsOpts controls a listing of items scoped to one project
+// (components, versions, issue types).
+type ProjectItemsOpts struct {
+	ListOpts
+	ProjectKey string
+}
+
+// CreateFieldsOpts controls a create-screen field metadata listing for one
+// project + issue type context.
+type CreateFieldsOpts struct {
+	ListOpts
+	ProjectKey  string
+	IssueTypeID string
 }
 
 // ListResult is one page of a paginated listing. Next is an opaque cursor for

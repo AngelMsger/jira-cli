@@ -1,7 +1,7 @@
 ---
 name: jira
-version: 0.1.0
-description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, and read/post/edit/delete comments. Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with both Jira Cloud and Data Center / Server."
+version: 0.2.0
+description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, read/post/edit/delete comments, and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom select options). Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; asks which values a project or an issue field allows; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
     bins: ["jira-cli"]
@@ -39,6 +39,10 @@ gives only a *topic* or *description*, do **not** guess a key — run
   `comment add`; to edit or delete one → `comment update` / `comment delete`
   (see [writing-issues.md](references/writing-issues.md)).
 - User wants to browse **projects** → `project list` / `project get`.
+- User asks **which values a field allows** (components, versions, issue
+  types, statuses, priorities, labels, a custom select field), or a value you
+  passed was rejected / matched nothing → the metadata discovery commands
+  (see [discovering-metadata.md](references/discovering-metadata.md)).
 - User asks **who they are** / which Jira account is in use → `whoami`.
 - A command fails → read the JSON error on stderr and follow `next_steps`
   (see [errors-and-exit-codes.md](references/errors-and-exit-codes.md)).
@@ -60,6 +64,14 @@ jira-cli comment update <id> --issue <key> --body ...
 jira-cli comment delete <id>... --issue <key> --yes
 jira-cli project list [--query q]      # projects visible to the user
 jira-cli project get <key>
+jira-cli project components <key>      # valid components in the project
+jira-cli project versions <key>        # valid fix/affects versions
+jira-cli project issuetypes <key>      # what `issue create --type` accepts
+jira-cli project statuses <key>        # workflow statuses per issue type
+jira-cli priority list                 # what --priority accepts
+jira-cli label list                    # labels in use (Cloud only)
+jira-cli field list --project K --type T     # create-screen fields
+jira-cli field options <field> --project K   # a field's allowed values
 jira-cli user resolve <selector>       # what assignee flags accept
 jira-cli whoami                        # the authenticated user
 jira-cli doctor                        # config / credentials / connectivity

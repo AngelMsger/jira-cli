@@ -21,6 +21,11 @@ const (
 	CapUserIdentifier Capability = "user.identifier"
 	// CapProjectListPagination: whether the project listing paginates.
 	CapProjectListPagination Capability = "project.list-pagination"
+	// CapMetadataListPagination: whether metadata listings (project
+	// components/versions, priorities) paginate.
+	CapMetadataListPagination Capability = "metadata.list-pagination"
+	// CapLabelList: listing the labels in use, instance-wide.
+	CapLabelList Capability = "label.list"
 )
 
 // SupportLevel describes how a flavor provides a capability.
@@ -65,6 +70,16 @@ var capabilitySupport = map[Capability]map[Flavor]Support{
 		FlavorCloud: {Level: SupportNative},
 		FlavorDataCenter: {Level: SupportEmulated,
 			Reason: "DC's /project endpoint is unpaginated; the full list arrives in one response and --query filters client-side"},
+	},
+	CapMetadataListPagination: {
+		FlavorCloud: {Level: SupportNative},
+		FlavorDataCenter: {Level: SupportEmulated,
+			Reason: "DC returns project components/versions and priorities as one full-list response; the CLI presents it as a single page"},
+	},
+	CapLabelList: {
+		FlavorCloud: {Level: SupportNative},
+		FlavorDataCenter: {Level: SupportUnsupported,
+			Reason: "DC (REST v2) has no label-listing endpoint; labels are discoverable only from the issues that carry them"},
 	},
 }
 

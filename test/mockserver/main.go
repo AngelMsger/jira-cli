@@ -53,6 +53,78 @@ func routes() http.Handler {
 		writeJSON(w, project(key, "Engineering"))
 	})
 
+	// Metadata discovery (DC dialect: full-list arrays, createmeta `values`).
+	mux.HandleFunc("GET /rest/api/2/project/{key}/components", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, []any{
+			map[string]any{"id": "10000", "name": "PaaS", "description": "Platform services",
+				"lead": map[string]any{"displayName": "Alice Example"}},
+			map[string]any{"id": "10001", "name": "IaaS"},
+		})
+	})
+	mux.HandleFunc("GET /rest/api/2/project/{key}/versions", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, []any{
+			map[string]any{"id": "20000", "name": "1.0.0", "released": true, "archived": false,
+				"releaseDate": "2026-01-15"},
+			map[string]any{"id": "20001", "name": "1.1.0", "released": false, "archived": false},
+		})
+	})
+	mux.HandleFunc("GET /rest/api/2/project/{key}/statuses", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, []any{
+			map[string]any{"id": "1", "name": "Bug", "statuses": []any{
+				status("1", "Open", "new"), status("3", "In Progress", "indeterminate"),
+				status("6", "Closed", "done"),
+			}},
+			map[string]any{"id": "3", "name": "Task", "statuses": []any{
+				status("1", "Open", "new"), status("6", "Closed", "done"),
+			}},
+		})
+	})
+	mux.HandleFunc("GET /rest/api/2/issue/createmeta/{key}/issuetypes", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]any{"values": []any{
+			map[string]any{"id": "1", "name": "Bug", "subtask": false},
+			map[string]any{"id": "3", "name": "Task", "subtask": false},
+		}, "isLast": true})
+	})
+	mux.HandleFunc("GET /rest/api/2/issue/createmeta/{key}/issuetypes/{typeId}", func(w http.ResponseWriter, r *http.Request) {
+		fields := []any{
+			map[string]any{
+				"fieldId": "summary", "name": "Summary", "required": true,
+				"schema":     map[string]any{"type": "string", "system": "summary"},
+				"operations": []any{"set"},
+			},
+			map[string]any{
+				"fieldId": "components", "name": "Component/s", "required": false,
+				"schema":     map[string]any{"type": "array", "items": "component", "system": "components"},
+				"operations": []any{"add", "set", "remove"},
+				"allowedValues": []any{
+					map[string]any{"id": "10000", "name": "PaaS"},
+					map[string]any{"id": "10001", "name": "IaaS"},
+				},
+			},
+		}
+		// Severity exists on Bug (type 1) only, so `field options` exercises
+		// the per-issue-type annotation when scanning all types.
+		if r.PathValue("typeId") == "1" {
+			fields = append(fields, map[string]any{
+				"fieldId": "customfield_10010", "name": "Severity", "required": false,
+				"schema": map[string]any{"type": "option",
+					"custom": "com.atlassian.jira.plugin.system.customfieldtypes:select"},
+				"operations": []any{"set"},
+				"allowedValues": []any{
+					map[string]any{"id": 1, "value": "Critical"},
+					map[string]any{"id": 2, "value": "Minor"},
+				},
+			})
+		}
+		writeJSON(w, map[string]any{"values": fields, "isLast": true})
+	})
+	mux.HandleFunc("GET /rest/api/2/priority", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, []any{
+			map[string]any{"id": "2", "name": "High"},
+			map[string]any{"id": "3", "name": "Medium"},
+		})
+	})
+
 	// GET and POST /search share one handler: the CLI uses GET on DC, but a
 	// POST form exists too and behaves identically here.
 	search := func(w http.ResponseWriter, r *http.Request) {
@@ -204,14 +276,16 @@ func issue(key, summary string) map[string]any {
 				"id": "3", "name": "In Progress",
 				"statusCategory": map[string]any{"key": "indeterminate"},
 			},
-			"issuetype": map[string]any{"name": "Task"},
-			"priority":  map[string]any{"name": "Medium"},
-			"assignee":  user("alice", "Alice Example"),
-			"reporter":  user("bob", "Bob Example"),
-			"labels":    []string{"mock"},
-			"project":   map[string]any{"key": "ENG"},
-			"created":   "2026-01-01T00:00:00.000+0000",
-			"updated":   "2026-01-02T00:00:00.000+0000",
+			"issuetype":   map[string]any{"name": "Task"},
+			"priority":    map[string]any{"name": "Medium"},
+			"assignee":    user("alice", "Alice Example"),
+			"reporter":    user("bob", "Bob Example"),
+			"labels":      []string{"mock"},
+			"components":  []any{map[string]any{"id": "10000", "name": "PaaS"}},
+			"fixVersions": []any{map[string]any{"id": "20001", "name": "1.1.0"}},
+			"project":     map[string]any{"key": "ENG"},
+			"created":     "2026-01-01T00:00:00.000+0000",
+			"updated":     "2026-01-02T00:00:00.000+0000",
 		},
 	}
 }
@@ -221,6 +295,13 @@ func comment(id, body string) map[string]any {
 		"id": id, "author": user("alice", "Alice Example"), "body": body,
 		"created": "2026-01-01T00:00:00.000+0000",
 		"updated": "2026-01-01T00:00:00.000+0000",
+	}
+}
+
+func status(id, name, category string) map[string]any {
+	return map[string]any{
+		"id": id, "name": name,
+		"statusCategory": map[string]any{"key": category},
 	}
 }
 

@@ -12,7 +12,8 @@ import (
 // unless fields are named explicitly, so the client always sends this list.
 var defaultSearchFields = []string{
 	"summary", "status", "assignee", "reporter", "issuetype",
-	"priority", "labels", "project", "parent", "created", "updated",
+	"priority", "labels", "components", "fixVersions",
+	"project", "parent", "created", "updated",
 }
 
 // SearchIssues runs a JQL search. The endpoints differ per flavor:

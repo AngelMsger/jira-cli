@@ -54,6 +54,12 @@
       <a href="#jira-cli-doctor">jira-cli doctor</a>
       </div>
     <div class="side-group">
+      <div class="side-title">field</div>
+      <a href="#jira-cli-field">jira-cli field</a>
+      <a href="#jira-cli-field-list">jira-cli field list</a>
+      <a href="#jira-cli-field-options">jira-cli field options</a>
+      </div>
+    <div class="side-group">
       <div class="side-title">issue</div>
       <a href="#jira-cli-issue">jira-cli issue</a>
       <a href="#jira-cli-issue-assign">jira-cli issue assign</a>
@@ -65,10 +71,24 @@
       <a href="#jira-cli-issue-transitions">jira-cli issue transitions</a>
       </div>
     <div class="side-group">
+      <div class="side-title">label</div>
+      <a href="#jira-cli-label">jira-cli label</a>
+      <a href="#jira-cli-label-list">jira-cli label list</a>
+      </div>
+    <div class="side-group">
+      <div class="side-title">priority</div>
+      <a href="#jira-cli-priority">jira-cli priority</a>
+      <a href="#jira-cli-priority-list">jira-cli priority list</a>
+      </div>
+    <div class="side-group">
       <div class="side-title">project</div>
       <a href="#jira-cli-project">jira-cli project</a>
+      <a href="#jira-cli-project-components">jira-cli project components</a>
       <a href="#jira-cli-project-get">jira-cli project get</a>
+      <a href="#jira-cli-project-issuetypes">jira-cli project issuetypes</a>
       <a href="#jira-cli-project-list">jira-cli project list</a>
+      <a href="#jira-cli-project-statuses">jira-cli project statuses</a>
+      <a href="#jira-cli-project-versions">jira-cli project versions</a>
       </div>
     <div class="side-group">
       <div class="side-title">skill</div>
@@ -345,6 +365,61 @@ a single command with the global --use-context flag instead.</p>
   jira-cli doctor --no-update-check</pre>
     </section>
     
+    <section class="cmd" id="jira-cli-field">
+      <h2>jira-cli field</h2>
+      <p class="short">Discover issue fields and their allowed values</p>
+      <pre>jira-cli field</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-field-list">
+      <h2>jira-cli field list</h2>
+      <p class="short">List the fields on an issue type&#39;s create screen</p>
+      <pre>jira-cli field list --project &lt;key&gt; --type &lt;issue-type&gt; [flags]</pre>
+      <p class="long">List the fields available when creating an issue of one type in one
+project: id, name, whether it is required, its schema, and how many
+allowed values it has (options_count). Use `field options` to read a
+constrained field&#39;s actual values. Custom fields appear here with
+their customfield_* id.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--project</code></td><td></td><td>project key (default from defaults.project)</td></tr>
+        <tr><td><code>--type</code></td><td></td><td>issue type name or ID (see `project issuetypes`)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli field list --project ENG --type Bug
+  jira-cli field list --project ENG --type Bug --fields items.id,items.name,items.required</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-field-options">
+      <h2>jira-cli field options</h2>
+      <p class="short">List a field&#39;s allowed values in a project</p>
+      <pre>jira-cli field options &lt;field&gt; --project &lt;key&gt; [--type &lt;issue-type&gt;] [flags]</pre>
+      <p class="long">List the allowed values of a constrained issue field (components,
+fix/affects versions, priority, or a select-list custom field) in one
+project, from the create metadata. Jira scopes field options by
+context — project and issue type — so with --type the values are read
+for that one issue type; without it every creatable issue type is
+scanned and each value lists the issue types it applies to.
+
+&lt;field&gt; is a field id (components, priority, customfield_10010) or a
+display name (&#34;Component/s&#34;, &#34;Severity&#34;), matched case-insensitively.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--project</code></td><td></td><td>project key (default from defaults.project)</td></tr>
+        <tr><td><code>--type</code></td><td></td><td>restrict to one issue type name or ID (default: scan all)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli field options components --project ENG
+  jira-cli field options &#34;Severity&#34; --project ENG --type Bug</pre>
+    </section>
+    
     <section class="cmd" id="jira-cli-issue">
       <h2>jira-cli issue</h2>
       <p class="short">Read, search and write Jira issues</p>
@@ -503,6 +578,63 @@ the values `issue transition --to` accepts.</p>
       <h3>Examples</h3><pre>  jira-cli issue transitions PROJ-123</pre>
     </section>
     
+    <section class="cmd" id="jira-cli-label">
+      <h2>jira-cli label</h2>
+      <p class="short">Browse issue labels</p>
+      <pre>jira-cli label</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-label-list">
+      <h2>jira-cli label list</h2>
+      <p class="short">List issue labels (Jira Cloud only)</p>
+      <pre>jira-cli label list [flags]</pre>
+      <p class="long">List every label in use on the instance. Labels are free-form and
+instance-wide, not project-scoped. Data Center has no REST endpoint
+for this listing; there, discover labels from the issues that carry
+them (e.g. `issue search --project X --field labels`).</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli label list</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-priority">
+      <h2>jira-cli priority</h2>
+      <p class="short">Browse issue priorities</p>
+      <pre>jira-cli priority</pre>
+      
+      
+      
+    </section>
+    
+    <section class="cmd" id="jira-cli-priority-list">
+      <h2>jira-cli priority list</h2>
+      <p class="short">List issue priorities</p>
+      <pre>jira-cli priority list [flags]</pre>
+      <p class="long">List the priorities issues can take — the valid values for
+`issue create/edit --priority`. The list is instance-wide; on Jira
+Cloud a priority scheme may narrow what a given project accepts.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli priority list</pre>
+    </section>
+    
     <section class="cmd" id="jira-cli-project">
       <h2>jira-cli project</h2>
       <p class="short">Browse Jira projects</p>
@@ -512,6 +644,25 @@ the values `issue transition --to` accepts.</p>
       
     </section>
     
+    <section class="cmd" id="jira-cli-project-components">
+      <h2>jira-cli project components</h2>
+      <p class="short">List a project&#39;s components</p>
+      <pre>jira-cli project components &lt;key|url&gt; [flags]</pre>
+      <p class="long">List the components defined in a project — the valid values for the
+issue &#34;components&#34; field there. On Jira Cloud the listing paginates;
+on Data Center the API returns the full list in one response.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli project components ENG</pre>
+    </section>
+    
     <section class="cmd" id="jira-cli-project-get">
       <h2>jira-cli project get</h2>
       <p class="short">Show one project</p>
@@ -519,6 +670,25 @@ the values `issue transition --to` accepts.</p>
       
       
       <h3>Examples</h3><pre>  jira-cli project get ENG</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-project-issuetypes">
+      <h2>jira-cli project issuetypes</h2>
+      <p class="short">List the issue types creatable in a project</p>
+      <pre>jira-cli project issuetypes &lt;key|url&gt; [flags]</pre>
+      <p class="long">List the issue types that can be created in a project (from the create
+metadata, so permissions apply) — the valid values for
+`issue create --type` there.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli project issuetypes ENG</pre>
     </section>
     
     <section class="cmd" id="jira-cli-project-list">
@@ -540,6 +710,37 @@ response (a single page) and --query filters client-side.</p>
       </table>
       <h3>Examples</h3><pre>  jira-cli project list
   jira-cli project list --query platform</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-project-statuses">
+      <h2>jira-cli project statuses</h2>
+      <p class="short">List a project&#39;s workflow statuses per issue type</p>
+      <pre>jira-cli project statuses &lt;key|url&gt;</pre>
+      <p class="long">List the workflow statuses valid in a project, grouped by issue type
+(different issue types can use different workflows). These are the
+values a `status = ...` JQL clause can match in that project.</p>
+      
+      <h3>Examples</h3><pre>  jira-cli project statuses ENG</pre>
+    </section>
+    
+    <section class="cmd" id="jira-cli-project-versions">
+      <h2>jira-cli project versions</h2>
+      <p class="short">List a project&#39;s versions</p>
+      <pre>jira-cli project versions &lt;key|url&gt; [flags]</pre>
+      <p class="long">List the versions defined in a project — the valid values for the issue
+&#34;fixVersions&#34; and affects-versions fields there. On Jira Cloud the
+listing paginates; on Data Center the API returns the full list in one
+response.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli project versions ENG</pre>
     </section>
     
     <section class="cmd" id="jira-cli-skill">

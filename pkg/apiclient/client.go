@@ -35,6 +35,20 @@ type Client interface {
 	ListProjects(ctx context.Context, opt ProjectListOpts) (ListResult[Project], error)
 	GetProject(ctx context.Context, key string) (*Project, error)
 
+	// Metadata discovery: the valid values for issue fields. Project-scoped
+	// listings (components, versions, issue types, statuses) reflect that
+	// field's option set within one project; priorities and labels are global.
+	ListComponents(ctx context.Context, opt ProjectItemsOpts) (ListResult[Component], error)
+	ListVersions(ctx context.Context, opt ProjectItemsOpts) (ListResult[Version], error)
+	ListProjectIssueTypes(ctx context.Context, opt ProjectItemsOpts) (ListResult[IssueType], error)
+	ListProjectStatuses(ctx context.Context, projectKey string) (ListResult[IssueTypeStatuses], error)
+	ListPriorities(ctx context.Context, opt ListOpts) (ListResult[Priority], error)
+	ListLabels(ctx context.Context, opt ListOpts) (ListResult[string], error)
+	// ListCreateFields reports the create-screen field metadata for one
+	// project + issue type, including per-context allowed values — the generic
+	// discovery path for custom select fields.
+	ListCreateFields(ctx context.Context, opt CreateFieldsOpts) (ListResult[FieldMeta], error)
+
 	ListComments(ctx context.Context, opt ListCommentsOpts) (ListResult[Comment], error)
 	AddComment(ctx context.Context, req AddCommentReq) (*Comment, error)
 	UpdateComment(ctx context.Context, req UpdateCommentReq) (*Comment, error)

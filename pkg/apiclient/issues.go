@@ -30,10 +30,14 @@ type rawIssue struct {
 		Priority *struct {
 			Name string `json:"name"`
 		} `json:"priority"`
-		Assignee *rawUser `json:"assignee"`
-		Reporter *rawUser `json:"reporter"`
-		Labels   []string `json:"labels"`
-		Project  *struct {
+		Assignee   *rawUser   `json:"assignee"`
+		Reporter   *rawUser   `json:"reporter"`
+		Labels     []string   `json:"labels"`
+		Components []namedRef `json:"components"`
+		// fixVersions / versions are the "fix" and "affects" version fields.
+		FixVersions []namedRef `json:"fixVersions"`
+		Versions    []namedRef `json:"versions"`
+		Project     *struct {
 			Key string `json:"key"`
 		} `json:"project"`
 		Parent *struct {
@@ -44,16 +48,36 @@ type rawIssue struct {
 	} `json:"fields"`
 }
 
+// namedRef is the wire shape of a {id, name} reference (component, version).
+type namedRef struct {
+	Name string `json:"name"`
+}
+
+// names flattens namedRefs to their names.
+func names(refs []namedRef) []string {
+	if len(refs) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(refs))
+	for _, r := range refs {
+		out = append(out, r.Name)
+	}
+	return out
+}
+
 // mapIssue normalizes a rawIssue. baseURL builds the human /browse URL.
 func mapIssue(r rawIssue, baseURL string) Issue {
 	issue := Issue{
-		ID:          r.ID,
-		Key:         r.Key,
-		Summary:     r.Fields.Summary,
-		Description: bodyToText(r.Fields.Description),
-		Labels:      r.Fields.Labels,
-		Created:     r.Fields.Created,
-		Updated:     r.Fields.Updated,
+		ID:              r.ID,
+		Key:             r.Key,
+		Summary:         r.Fields.Summary,
+		Description:     bodyToText(r.Fields.Description),
+		Labels:          r.Fields.Labels,
+		Components:      names(r.Fields.Components),
+		FixVersions:     names(r.Fields.FixVersions),
+		AffectsVersions: names(r.Fields.Versions),
+		Created:         r.Fields.Created,
+		Updated:         r.Fields.Updated,
 	}
 	if r.Key != "" && baseURL != "" {
 		issue.URL = baseURL + "/browse/" + r.Key

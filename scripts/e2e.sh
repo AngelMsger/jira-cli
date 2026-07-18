@@ -102,7 +102,25 @@ assert_contains  "project list"           "Engineering"    "${CLI[@]}" project l
 assert_contains  "project list table"     "ENG"            "${CLI[@]}" project list --format table
 assert_contains  "project list --query"   "Operations"     "${CLI[@]}" project list --query ops
 assert_contains  "project get"            "Engineering"    "${CLI[@]}" project get ENG
+assert_contains  "project components"     "PaaS"           "${CLI[@]}" project components ENG
+assert_contains  "project versions"       "1.0.0"          "${CLI[@]}" project versions ENG
+assert_contains  "project issuetypes"     "Bug"            "${CLI[@]}" project issuetypes ENG
+assert_contains  "project statuses"       "In Progress"    "${CLI[@]}" project statuses ENG
+assert_contains  "priority list"          "High"           "${CLI[@]}" priority list
+assert_exit      "label list on DC -> 2"  2                "${CLI[@]}" label list
+assert_err_contains "label list DC error code" "LABEL_LIST_DC" \
+                                          "${CLI[@]}" label list
+assert_contains  "field list"             '"options_count"' \
+                                          "${CLI[@]}" field list --project ENG --type Bug
+assert_exit      "field list needs --type -> 2" 2          "${CLI[@]}" field list --project ENG
+assert_contains  "field options by id"    "PaaS"           "${CLI[@]}" field options components --project ENG
+assert_contains  "field options annotates types" '"issue_types"' \
+                                          "${CLI[@]}" field options components --project ENG
+assert_contains  "field options by name + type" "Critical" \
+                                          "${CLI[@]}" field options Severity --project ENG --type Bug
+assert_exit      "field options unknown field -> 6" 6      "${CLI[@]}" field options bogus --project ENG
 assert_contains  "issue get"              "Welcome"        "${CLI[@]}" issue get ENG-1
+assert_contains  "issue get has components" "PaaS"         "${CLI[@]}" issue get ENG-1
 assert_contains  "issue get by url"       "Welcome"        "${CLI[@]}" issue get "$MOCK_URL/browse/ENG-1"
 assert_contains  "fields projection"      '"key"'          "${CLI[@]}" issue get ENG-1 --fields key,summary
 assert_contains  "search raw jql"         "Welcome"        "${CLI[@]}" issue search 'project = ENG'
