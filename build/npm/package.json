@@ -1,6 +1,6 @@
 {
   "name": "@angelmsger/jira-cli",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Drive Jira issue-tracking workflows from the command line, built for coding agents: read and search issues via JQL, create/edit/assign/transition them, and manage comments across Cloud and Data Center.",
   "keywords": [
     "jira",

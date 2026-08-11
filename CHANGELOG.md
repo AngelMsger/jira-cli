@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-11
+
 ### Added
 
 - **Metadata discovery: enumerate the valid values of issue fields.** The CLI
@@ -33,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Two new capability-table rows record the flavor divergences: label listing
   (unsupported on DC) and metadata-list pagination (DC returns components,
   versions and priorities as one full-list response).
+- **Grok Build skill install target.** `skill install` now deploys the companion
+  Skill for Grok Build (`--agent grok`) to `~/.grok/skills/<name>` globally and
+  `./.grok/skills/<name>` with `--project`. Auto-detection probes `~/.grok` /
+  `./.grok` alongside Claude Code and Codex. Installation guides, generated CLI
+  docs, and agent help text list the new target.
+
 
 ## [0.1.1] - 2026-07-16
 
@@ -93,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/AngelMsger/jira-cli/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/AngelMsger/jira-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/AngelMsger/jira-cli/releases/tag/v0.1.0

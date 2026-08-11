@@ -182,7 +182,7 @@ shows nothing if the CLI is not configured yet).
 
 ## 3. Install the companion Skill
 
-The `jira` Skill teaches a coding agent — **Claude Code** and **Codex** —
+The `jira` Skill teaches a coding agent — **Claude Code**, **Codex**, and **Grok Build** —
 how to drive this CLI. It is **embedded in the `jira-cli` binary**, so
 whichever way you installed the CLI — npm, `go install`, a prebuilt binary —
 you already have a version-matched copy of the Skill.
@@ -195,7 +195,7 @@ Skill into every one it finds:
 ```bash
 jira-cli skill install              # auto-detect; install for each agent found
 jira-cli skill install --agent codex          # only Codex
-jira-cli skill install --agent claude-code,codex
+jira-cli skill install --agent claude-code,codex,grok
 jira-cli skill install --project    # project dirs instead of $HOME
 jira-cli skill install --dir <path> # explicit base -> <path>/jira
 
@@ -209,9 +209,10 @@ Install locations per agent:
 |-------|------------------|-----------------------|
 | Claude Code | `~/.claude/skills/jira` | `./.claude/skills/jira` |
 | Codex | `~/.codex/skills/jira` | `./.agents/skills/jira` |
+| Grok Build | `~/.grok/skills/jira` | `./.grok/skills/jira` |
 
-Auto-detection looks for `~/.claude` / `~/.codex` (global) or `./.claude` /
-`./.agents` / `./AGENTS.md` (project). If nothing is detected, pass `--agent`
+Auto-detection looks for `~/.claude` / `~/.codex` / `~/.grok` (global) or `./.claude` /
+`./.agents` / `./AGENTS.md` / `./.grok` (project). If nothing is detected, pass `--agent`
 or `--dir` explicitly.
 
 Because the Skill ships inside the binary, **updating is automatic**: upgrade

@@ -71,7 +71,7 @@ Or download a prebuilt binary from the
 ### 2. Deploy the companion Skill
 
 The `jira` Skill is embedded in the binary; it teaches your coding agent
-(**Claude Code**, **Codex**) how to drive the CLI. `skill install` probes for
+(**Claude Code**, **Codex**, **Grok Build**) how to drive the CLI. `skill install` probes for
 installed agents and installs into each one found:
 
 ```bash
@@ -135,7 +135,7 @@ are never written to the config file.
 | `comment list` / `add` / `update` / `delete` | read, post, edit and remove comments; `delete` needs `--yes` |
 | `whoami` | print the user the credentials authenticate as |
 | `user resolve` / `user me` | resolve a user selector to the identifier assignee flags accept |
-| `skill install` / `skill uninstall` | deploy or remove the embedded companion Skill (Claude Code, Codex) |
+| `skill install` / `skill uninstall` | deploy or remove the embedded companion Skill (Claude Code, Codex, Grok Build) |
 | `config get-contexts` / `use-context` / `delete-context` | manage multiple named servers |
 | `config` / `auth` / `doctor` / `version` | setup and diagnostics |
 
