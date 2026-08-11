@@ -92,7 +92,7 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 
 | Command | Description |
 | --- | --- |
-| [`jira-cli skill`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-skill) | Install the companion Skill for coding agents (Claude Code, Codex, Grok Build) |
+| [`jira-cli skill`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-skill) | Install the companion Skill for coding agents (Claude Code, Codex, Grok Build, Pi) |
 | [`jira-cli skill install`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-skill-install) | Deploy the embedded Skill into a coding agent's skills directory |
 | [`jira-cli skill path`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-skill-path) | Print where the Skill would be installed, and whether it is |
 | [`jira-cli skill show`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-skill-show) | Print the embedded SKILL.md to stdout |
