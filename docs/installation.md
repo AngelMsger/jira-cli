@@ -182,7 +182,7 @@ shows nothing if the CLI is not configured yet).
 
 ## 3. Install the companion Skill
 
-The `jira` Skill teaches a coding agent — **Claude Code**, **Codex**, **Grok Build**, and **Pi** —
+The `jira` Skill teaches a coding agent — **Claude Code**, **Codex**, **Cursor**, **Agents** (shared), **Gemini CLI**, **GitHub Copilot**, **OpenCode**, **Continue**, **Windsurf**, **Grok Build**, **Pi**, **Kilo Code**, and **Roo Code** —
 how to drive this CLI. It is **embedded in the `jira-cli` binary**, so
 whichever way you installed the CLI — npm, `go install`, a prebuilt binary —
 you already have a version-matched copy of the Skill.
@@ -195,7 +195,7 @@ Skill into every one it finds:
 ```bash
 jira-cli skill install              # auto-detect; install for each agent found
 jira-cli skill install --agent codex          # only Codex
-jira-cli skill install --agent claude-code,codex,grok,pi
+jira-cli skill install --agent cursor,agents,gemini
 jira-cli skill install --project    # project dirs instead of $HOME
 jira-cli skill install --dir <path> # explicit base -> <path>/jira
 
@@ -209,12 +209,19 @@ Install locations per agent:
 |-------|------------------|-----------------------|
 | Claude Code | `~/.claude/skills/jira` | `./.claude/skills/jira` |
 | Codex | `~/.codex/skills/jira` | `./.agents/skills/jira` |
+| Cursor | `~/.cursor/skills/jira` | `./.cursor/skills/jira` |
+| Agents (shared) | `~/.agents/skills/jira` | `./.agents/skills/jira` |
+| Gemini CLI | `~/.gemini/skills/jira` | `./.gemini/skills/jira` |
+| GitHub Copilot | `~/.copilot/skills/jira` | `./.agents/skills/jira` |
+| OpenCode | `~/.config/opencode/skills/jira` | `./.opencode/skills/jira` |
+| Continue | `~/.continue/skills/jira` | `./.continue/skills/jira` |
+| Windsurf | `~/.codeium/windsurf/skills/jira` | `./.windsurf/skills/jira` |
 | Grok Build | `~/.grok/skills/jira` | `./.grok/skills/jira` |
 | Pi | `~/.pi/agent/skills/jira` | `./.pi/skills/jira` |
+| Kilo Code | `~/.kilocode/skills/jira` | `./.kilocode/skills/jira` |
+| Roo Code | `~/.roo/skills/jira` | `./.roo/skills/jira` |
 
-Auto-detection looks for `~/.claude` / `~/.codex` / `~/.grok` / `~/.pi` (global) or `./.claude` /
-`./.agents` / `./AGENTS.md` / `./.grok` / `./.pi` (project). If nothing is detected, pass `--agent`
-or `--dir` explicitly.
+Auto-detection looks for each agent's home or project marker (`~/.claude`, `~/.codex`, `~/.cursor`, `~/.agents`, `~/.gemini`, `~/.copilot`, `~/.config/opencode`, `~/.continue`, `~/.codeium/windsurf`, `~/.grok`, `~/.pi`, `~/.kilocode`, `~/.roo`, and the matching project dirs). If nothing is detected, pass `--agent` or `--dir` explicitly.
 
 Because the Skill ships inside the binary, **updating is automatic**: upgrade
 the CLI (`npm update -g @angelmsger/jira-cli`, `go install ...@latest`,
