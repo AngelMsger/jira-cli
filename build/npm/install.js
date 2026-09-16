@@ -112,10 +112,13 @@ async function install() {
 function welcomeText() {
   return [
     '',
-    'jira-cli is ready. First-time setup:',
+    'jira-cli is ready. After every install or upgrade:',
     '',
+    '  jira-cli skill install          install or refresh the coding-agent Skill',
+    '  reload your agent context            load the refreshed Skill',
+    '',
+    'First-time server setup:',
     '  jira-cli config init --pretty   configure your server + credentials (interactive)',
-    '  jira-cli skill install          install the coding-agent Skill',
     '',
     'Everyday use:',
     '  jira-cli issue search --assignee me',

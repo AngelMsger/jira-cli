@@ -1,6 +1,6 @@
 ---
 name: jira
-version: 0.3.0
+version: 0.3.1
 description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, read/post/edit/delete comments, and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom select options). Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; asks which values a project or an issue field allows; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
@@ -131,16 +131,18 @@ limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
-- **Skill handshake — set `JIRA_CLI_SKILL=1`.** Once you have loaded this
-  Skill, export `JIRA_CLI_SKILL=1` in the environment you run the CLI from.
-  When the variable is absent the CLI assumes you may be inferring commands
-  blindly and prints a one-line `{"_notice":{"skill":{…}}}` discovery hint on
-  **stderr** (non-interactive sessions only). Setting it silences the hint;
-  `jira-cli skill status` reports whether it is set. (To suppress the hint
-  without loading the Skill, use `JIRA_CLI_NO_SKILL_HINT=1`.)
+- **Skill handshake — set `JIRA_CLI_SKILL=0.3.1`.** Once you have loaded
+  this Skill, export that exact value in the environment used to run the CLI.
+  The CLI compares it with the embedded Skill version and emits a structured
+  stderr notice when the Skill is missing, old, or uses the legacy unversioned
+  handshake. `jira-cli skill status` reports loaded, installed, and embedded
+  versions. To suppress the notice without loading the Skill, set
+  `JIRA_CLI_NO_SKILL_HINT=1`.
 - **Update notices on stderr.** When a newer release exists, commands print a
   one-line `{"_notice":{"update":{…}}}` to **stderr** (never stdout, so parsing
-  the data is unaffected). `doctor` reports it too. Silence with
+  the data is unaffected). Follow every `next_steps` entry: upgrade the CLI,
+  run `jira-cli skill install`, then reload the agent context. `doctor`
+  reports CLI and Skill status too. Silence update notices with
   `JIRA_CLI_NO_UPDATE_NOTIFIER=1`.
 - **Forgiving flags.** camelCase/snake_case flag names (`--orderBy`) and a flag
   stuck to its value (`--limit100`) are auto-corrected to the canonical form when

@@ -19,6 +19,11 @@ test('rejects unsupported Windows architectures', () => {
   assert.throws(() => assetName('win32', 'ia32'), /unsupported platform win32\/ia32/);
 });
 
+test('welcome text explains Skill refresh', () => {
+  assert.match(welcomeText(), /jira-cli skill install/);
+  assert.match(welcomeText(), /reload your agent context/);
+});
+
 test('welcome text recommends valid Jira commands', () => {
   assert.match(welcomeText(), /jira-cli issue search/);
   assert.match(welcomeText(), /jira-cli issue get/);
