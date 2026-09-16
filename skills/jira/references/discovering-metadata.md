@@ -68,4 +68,5 @@ jira-cli field options "Severity" --project ENG --type Bug
 
 Normalized issues carry `components`, `fix_versions` and `affects_versions`
 (name arrays). Search results include components and fixVersions in the
-default field set; request `--field versions` to add affects-versions.
+default field set. To include affects-versions, pass `--field versions` along
+with every other server field you need: `--field` replaces the default set.

@@ -68,7 +68,8 @@ func newIssueSearchCmd(s *appState) *cobra.Command {
 		Long: "Search issues. Pass a raw JQL string, or compose one from filter flags\n" +
 			"(--project, --assignee, --status, --type, --label, --text; AND-joined).\n" +
 			"--assignee/--reporter accept \"me\" (the authenticated user) and\n" +
-			"\"unassigned\".",
+			"\"unassigned\". --field selects server fields, but only normalized issue\n" +
+			"fields appear in output; due dates and custom fields are not exposed.",
 		Example: "  jira-cli issue search 'project = ENG AND status = \"In Progress\"'\n" +
 			"  jira-cli issue search --project ENG --assignee me --order-by \"updated DESC\"\n" +
 			"  jira-cli issue search --text \"login crash\" --all",
@@ -200,7 +201,9 @@ func newIssueEditCmd(s *appState) *cobra.Command {
 		Use:   "edit <key|url>",
 		Short: "Update issue fields",
 		Long: "Update an issue's summary, description, priority or labels. Only the\n" +
-			"flags you pass change; everything else keeps its value.",
+			"flags you pass change; everything else keeps its value. Description flags\n" +
+			"replace the whole body. Cloud rich text cannot be preserved by rewriting\n" +
+			"the normalized plain-text description.",
 		Example: "  jira-cli issue edit PROJ-123 --summary \"New title\"\n" +
 			"  jira-cli issue edit PROJ-123 --add-label triaged --remove-label urgent",
 		Aliases: []string{"update"},
@@ -262,9 +265,9 @@ func newIssueAssignCmd(s *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "assign <key|url>",
 		Short: "Change or clear an issue's assignee",
-		Long: "Assign an issue. --to accepts a Cloud accountId, a Data Center\n" +
-			"username, or a display-name/email query resolved to a unique user\n" +
-			"(see `jira-cli user resolve`).",
+		Long: "Assign an issue. --to accepts a Cloud accountId or display-name/email\n" +
+			"query resolved to a unique user (see `jira-cli user resolve`). On Data\n" +
+			"Center, supply a known username; it is passed through without a lookup.",
 		Example: "  jira-cli issue assign PROJ-123 --to alice@example.com\n" +
 			"  jira-cli issue assign PROJ-123 --unassign",
 		Args: cobra.ExactArgs(1),
@@ -372,7 +375,7 @@ func newIssueTransitionCmd(s *appState) *cobra.Command {
 			if err := client.TransitionIssue(ctx, req); err != nil {
 				return err
 			}
-			issue, err := client.GetIssue(ctx, apiclient.GetIssueOpts{Key: key})
+			issue, err := apiclient.GetIssueAfterWrite(ctx, client, key)
 			if err != nil {
 				return err
 			}

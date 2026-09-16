@@ -91,8 +91,14 @@ func runBatch(s *appState, items []string, do func(item string) (any, error)) er
 		return emitErr
 	}
 	if failed > 0 {
-		return cerrors.Newf(last.Category, "BATCH_PARTIAL_FAILURE",
-			"%d of %d operations failed; see per-item results on stdout", failed, len(items))
+		err := cerrors.Newf(last.Category, "BATCH_PARTIAL_FAILURE",
+			"%d of %d operations failed; see per-item results on stdout", failed, len(items)).
+			WithHTTPStatus(last.HTTPStatus).
+			WithCause(last).
+			WithHint("Do not replay the batch. Inspect each failed item's outcome and verify remote state before retrying that item.").
+			WithNextSteps(last.NextSteps...)
+		err.Retryable = false
+		return err
 	}
 	return nil
 }

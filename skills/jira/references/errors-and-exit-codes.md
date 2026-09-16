@@ -1,8 +1,8 @@
 # Errors and exit codes
 
 On failure `jira-cli` writes a JSON object to **stderr** and exits with a
-category-specific code. stdout stays empty, so a successful pipeline never has
-to parse errors.
+category-specific code. stdout stays empty for a single failed operation;
+multi-item deletes emit per-item results there even when some items fail.
 
 ## Error shape
 
@@ -21,7 +21,7 @@ to parse errors.
 ```
 
 Always read `hint` and `next_steps` — they tell you how to recover.
-`retryable` indicates whether retrying in the same environment can succeed.
+`retryable` indicates whether retrying the same invocation can help safely.
 Environment changes such as a host retry use the optional `recovery` object
 instead.
 
@@ -41,6 +41,26 @@ instead.
 | 9 | server | Jira 5xx; retry later |
 | 10 | parse | a response could not be decoded; likely a client bug — the write may have succeeded, verify with a read |
 | 11 | conflict | a write hit a conflict (409); re-read the issue, then retry |
+
+## Writes that succeeded or may have succeeded
+
+`issue create`, `issue edit` and `issue transition` read the issue after the
+write. If that read fails, `WRITE_SUCCEEDED_READ_FAILED` means the write was
+acknowledged: the error retains the issue key and browse URL, uses the read
+failure's category/exit code, and sets `retryable: false`. Follow the supplied
+`issue get` command; do not repeat the write.
+
+`WRITE_SUCCEEDED_RESPONSE_INVALID` means Jira acknowledged the write but its
+response could not be decoded or omitted its identifier. For a creation with
+no usable key, the recovery command searches the project's newest 25 issues;
+compare the description/summary and follow cursors if needed. An empty first
+page is not evidence that nothing was created.
+
+Network, rate-limit and server failures during a write have an **unknown
+outcome** and `retryable: false`. Verify the issue or comment state before
+considering another write. This also applies to comments added by transitions.
+The CLI does not replay mutations automatically. A failed batch may contain
+successful deletions: inspect per-item results, never replay the whole batch.
 
 ## Common Jira-specific codes
 
@@ -65,17 +85,19 @@ instead.
   when `recovery.scope` is `host`, request host access and retry the same
   invocation once. Repeating it in the same sandbox will not help. Only
   configure credentials when the host retry also reports them missing.
-- **auth (4)** → `jira-cli auth status`; if not configured, `config init`.
-  Agents in a sandbox: the credential is usually the user's, just unreadable
-  from the sandbox — request elevation and retry rather than re-initializing.
-  See `getting-started.md` › "For agents and sandboxes".
+- **auth (4)** → `jira-cli auth status`; a server 401 means the supplied
+  credential was rejected, so ask the user to renew it through their normal
+  setup. Host access retries apply to the credential-resolution codes above,
+  not to an ordinary 401. Do not initialize a replacement sandbox config.
 - **not_found (6)** → the key/URL is wrong or the issue moved projects;
   `jira-cli issue search --text "<keywords>"` to relocate it.
 - **permission (5)** → either a 403 from Jira (the credential works but lacks
   rights — not fixable by retrying, tell the user the account needs access),
   **or** `READONLY_BLOCKED` from local read-only mode (`defaults.read_only` /
-  `JIRA_CLI_READ_ONLY=1`). To send the blocked write anyway, add
-  `--allow-writes`; to preview without sending, add `--dry-run`. See
+  `JIRA_CLI_READ_ONLY=1`). Use `--allow-writes` only when the current task
+  authorizes the concrete write despite that default; never override an
+  explicit read-only instruction. To preview, add `--dry-run`. See
   `safety-modes.md`.
-- **rate_limit (7) / server (9) / network (8)** → `retryable: true`; wait and
-  retry, and prefer a narrower query over `--all`.
+- **rate_limit (7) / server (9) / network (8)** → for reads marked
+  `retryable: true`, retry with bounded backoff and prefer a narrower query
+  over `--all`. For writes, use the outcome rules above.

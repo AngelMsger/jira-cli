@@ -81,6 +81,12 @@ User       { AccountID, Username, DisplayName, Email, Active }
 (the ADF bridge normalizes Cloud). JSON output fields use snake_case;
 `Issue.URL` is the human `/browse/<key>` link.
 
+Search `--field` selects server-side fields, but normalization only exposes
+the fields in `Issue`. Due dates and arbitrary custom fields are not exposed;
+their absence in output does not mean their server values are empty. Data
+Center user resolution echoes a supplied username without verifying it; only
+Cloud supports display-name/email lookup.
+
 ## 4. Configuration and authentication
 
 ### 4.1 Config structure
@@ -197,10 +203,14 @@ implementation.
 ### 6.1 Output
 
 Three `Formatter` implementations: `json` (default, agent-oriented,
-stdout), `table` (human-readable), and `ndjson` (streaming for large
+stdout), `table` (human-readable), and `ndjson` (item-per-line encoding for large
 result sets). `--fields a,b.c` projects by dot-path. List commands
 emit the pagination envelope `{items, next, has_more}`; `--cursor`
 continues from a prior page's `next`.
+
+`--all` collects all pages before formatting, including NDJSON. `--limit` is a
+page size, not a total bound. Agents should start with scoped queries and one
+page, follow cursors as needed, and reserve `--all` for complete inventories.
 
 Successful output is unified as JSON on stdout, with two deliberate
 raw-output exceptions:
@@ -238,6 +248,50 @@ Jira's error envelope (`{"errorMessages": [...], "errors": {"field":
 Categories: `usage config auth not_found permission conflict rate_limit
 network server parse internal`.
 
+Mutation errors use this existing envelope without changing category/exit-code
+mapping. `pkg/apiclient/write_errors.go` supplies the common behavior:
+
+- `doWriteJSON` disables replay guidance for uncertain network, 429 and 5xx
+  write failures. The original code, category, HTTP status and error cause are
+  retained, with `retryable: false` and read-only verification commands.
+- Only a 2xx response acknowledges a write. Unexpected 3xx responses remain
+  uncertain; decode errors retain the actual response status.
+- A successful write followed by an invalid/incomplete response returns
+  `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
+  newest-issues query scoped to the project; the error does not invent a key.
+- `GetIssueAfterWrite` is used by create/edit and the transition command.
+  If hydration fails, `WRITE_SUCCEEDED_READ_FAILED` retains the known issue
+  key and browse URL, disables retries of the mutation, and supplies `issue get`.
+  No partially populated issue is emitted as success. Assignment/deletion have
+  no hydration step; comment add/update decode their write response directly.
+- Multi-item deletion errors retain each item's outcome and mark the aggregate
+  non-retryable, so successful items are not replayed.
+
+For example, an acknowledged creation followed by a forbidden read emits
+this error (exit 5, empty stdout; hints abbreviated here):
+
+```json
+{"error":{"category":"permission","code":"WRITE_SUCCEEDED_READ_FAILED",
+  "message":"Write succeeded for issue ENG-123 (https://jira.example/browse/ENG-123), but reading the updated issue failed: Jira returned HTTP 403: cannot read issue",
+  "next_steps":["jira-cli issue get 'ENG-123'"],
+  "retryable":false,"http_status":403}}
+```
+
+An uncertain creation retains its server category/code and gives bounded
+discovery rather than permission to create again:
+
+```json
+{"error":{"category":"server","code":"HTTP_Service Unavailable",
+  "message":"Write outcome is unknown for new issue \"s\" in project ENG: Jira returned HTTP 503: temporarily unavailable",
+  "next_steps":["jira-cli issue search --project 'ENG' --order-by 'created DESC' --limit 25"],
+  "retryable":false,"http_status":503}}
+```
+
+These shapes and the no-replay behavior are covered by fake-transport tests
+for both flavors. Follow cursors when verifying; a missing match on the first
+page does not prove that the write failed. Ordinary read errors keep their
+existing retry behavior, including Cloud's read-only POST search endpoint.
+
 ### 6.3 Exit codes
 
 | Code | Category | Code | Category |
@@ -268,9 +322,11 @@ plain-text contract:
   unknown nodes are recursed into so no text is silently dropped.
 
 The conversion is intentionally lossy for rich nodes (tables, panels,
-marks); the loss is one-directional and documented in the capability
-table and the companion Skill. Text written through the bridge round-trips
-exactly (pinned by `TestTextToADFRoundTrip`).
+marks, media references and hyperlink targets). Description edits replace the
+whole field. Do not round-trip a rich Cloud description through normalized
+plain text when its formatting or references must survive; use an authorized
+ADF-preserving interface or prepare a precise edit for the user. Text written
+through the bridge round-trips exactly (pinned by `TestTextToADFRoundTrip`).
 
 ## 8. JQL construction
 
@@ -329,11 +385,16 @@ trigger-word description, `metadata.requires.bins`,
   resolution.
 - `writing-issues.md` — create / edit / assign / transition / comments,
   and the ADF plain-text contract.
+- `replying-to-people.md` — authorship classification, concrete per-comment
+  approval with existing authorization preserved, and agent attribution.
 - `safety-modes.md` — `--dry-run` and read-only mode for agents.
 - `errors-and-exit-codes.md` — exit-code table + per-category recovery
   steps, including the Jira-specific codes.
 
-Core golden rule: resolve URLs / topics into issue keys before acting.
+Resolve URLs / topics into issue keys before acting. Keep issue descriptions
+focused and preserve unrelated human text. Explain the reason for the human
+reply gate once per session, reuse approval already given for a specific
+reply, and avoid additional approval gates for authorized ordinary writes.
 
 The same `SKILL.md` ships to every supported coding agent listed in `agentSpecs`
 (all only require frontmatter `name` + `description`). `skill install`

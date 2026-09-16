@@ -149,7 +149,7 @@ func (c *apiClient) doJSON(ctx context.Context, method, path string, query url.V
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return c.httpError(resp)
 	}
 	if out == nil {
@@ -157,7 +157,10 @@ func (c *apiClient) doJSON(ctx context.Context, method, path string, query url.V
 		return nil
 	}
 	rawResp, _ := io.ReadAll(resp.Body)
-	return decodeJSON(rawResp, out)
+	if err := decodeJSON(rawResp, out); err != nil {
+		return cerrors.AsCLIError(err).WithHTTPStatus(resp.StatusCode)
+	}
+	return nil
 }
 
 // decodeJSON unmarshals a server response body into out. On failure it surfaces

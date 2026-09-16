@@ -167,7 +167,11 @@ Failures are JSON on **stderr** (stdout stays a clean data channel) and map to
 stable exit codes: `0` success, `2` usage, `3` config, `4` auth, `5` permission,
 `6` not found, `7` rate limit, `8` network, `9` server, `10` parse, `11` conflict.
 Each error carries `next_steps` naming the command to run next, and `retryable`
-to guide back-off.
+to guide safe retries. A write can succeed before a follow-up read fails:
+`WRITE_SUCCEEDED_READ_FAILED` preserves the issue key and read-only recovery
+command with `retryable: false`. Uncertain write outcomes also require
+verification before another mutation; a non-zero exit is not proof of failure.
+See [error and write-outcome details](docs/technical-design.md#62-errors).
 
 ## Use as a Go library
 

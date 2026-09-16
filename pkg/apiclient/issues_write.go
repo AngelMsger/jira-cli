@@ -65,10 +65,13 @@ func (c *apiClient) CreateIssue(ctx context.Context, req CreateIssueReq) (*Issue
 	var created struct {
 		Key string `json:"key"`
 	}
-	if err := c.doJSON(ctx, method, path, nil, payload, &created); err != nil {
+	if err := c.doWriteJSON(ctx, method, path, payload, &created, createWriteTarget(req)); err != nil {
 		return nil, err
 	}
-	return c.GetIssue(ctx, GetIssueOpts{Key: created.Key})
+	if created.Key == "" {
+		return nil, missingWriteIdentity(createWriteTarget(req))
+	}
+	return GetIssueAfterWrite(ctx, c, created.Key)
 }
 
 // buildEditIssue assembles the PUT request for updating issue fields.
@@ -116,10 +119,10 @@ func (c *apiClient) EditIssue(ctx context.Context, req EditIssueReq) (*Issue, er
 	if err != nil {
 		return nil, err
 	}
-	if err := c.doJSON(ctx, method, path, nil, payload, nil); err != nil {
+	if err := c.doWriteJSON(ctx, method, path, payload, nil, issueWriteTarget(c.baseURL, req.Key)); err != nil {
 		return nil, err
 	}
-	return c.GetIssue(ctx, GetIssueOpts{Key: req.Key})
+	return GetIssueAfterWrite(ctx, c, req.Key)
 }
 
 // buildAssignIssue assembles the PUT request for changing an issue's
@@ -154,7 +157,7 @@ func (c *apiClient) AssignIssue(ctx context.Context, req AssignIssueReq) error {
 	if err != nil {
 		return err
 	}
-	return c.doJSON(ctx, method, path, nil, payload, nil)
+	return c.doWriteJSON(ctx, method, path, payload, nil, issueWriteTarget(c.baseURL, req.Key))
 }
 
 // buildTransitionIssue assembles the POST request for a workflow transition.
@@ -189,7 +192,7 @@ func (c *apiClient) TransitionIssue(ctx context.Context, req TransitionIssueReq)
 	if err != nil {
 		return err
 	}
-	return c.doJSON(ctx, method, path, nil, payload, nil)
+	return c.doWriteJSON(ctx, method, path, payload, nil, issueWriteTarget(c.baseURL, req.Key))
 }
 
 // DescribeWrite returns the HTTP request a write operation would send, without

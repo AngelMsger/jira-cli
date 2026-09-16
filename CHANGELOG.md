@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-16
+
+### Fixed
+
+- Preserve issue identity and acknowledged-write status when create, edit or
+  transition succeeds but the following read fails. Errors keep their original
+  category/exit status and cause, carry read-only recovery steps, and never
+  recommend replaying the mutation or emit incomplete issue data as success.
+- Mark uncertain write failures and partial delete batches non-retryable.
+  Successful writes with invalid or missing response identifiers are explicit
+  failures with verification guidance rather than misleading empty results.
+- Correct Skill and CLI guidance for normalized search fields, Data Center
+  username passthrough, full-description replacement and lossy Cloud rich text.
+
+### Changed
+
+- The companion Skill now guides concise issue writing, preservation of human
+  text, bounded retrieval and outcome verification. Replies to human comments
+  require approval of the concrete reply with the reason explained once;
+  existing approval is reused and ordinary authorized writes need no extra gate.
+- Agent attribution covers comment updates and transition comments, preserves
+  human-written content, and uses a plain-text URL suited to both flavors.
+
 ## [0.2.2] - 2026-08-12
 
 ### Added
@@ -124,7 +147,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/AngelMsger/jira-cli/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/AngelMsger/jira-cli/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/AngelMsger/jira-cli/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/AngelMsger/jira-cli/compare/v0.1.1...v0.2.0

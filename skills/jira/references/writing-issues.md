@@ -4,7 +4,17 @@ Every command here is a **write**: each accepts `--dry-run` (preview the HTTP
 request without sending it), and all of them are blocked by read-only mode.
 See [safety-modes.md](safety-modes.md).
 
+Use the user's established authorization for ordinary writes; do not ask again
+after preparing the requested change. Replies to human comments have the
+specific gate in [replying-to-people.md](replying-to-people.md).
+
 ## Create
+
+Write a concrete summary. Keep the description as short as the issue permits:
+state the problem or requested outcome, expected versus actual behavior when
+relevant, and evidence or reproduction steps needed to act. Add acceptance
+criteria when they clarify completion. Do not paste the agent's work log or
+invent requirements. Use a file for multiline text to preserve quoting.
 
 ```bash
 jira-cli issue create --project ENG --type Task --summary "Fix login crash"
@@ -22,7 +32,8 @@ jira-cli issue create --project ENG --type Bug --summary "..." \
 - `--parent` places the issue under an epic, or makes a subtask when `--type`
   is a subtask type.
 - The created issue is re-read and printed in full, so the output carries the
-  new key.
+  new key. If that read fails, the error preserves the key and confirms the
+  write succeeded; follow its read-only recovery step, never create again.
 
 ## Edit
 
@@ -38,6 +49,15 @@ jira-cli issue edit ENG-123 --priority Low
 `--add-label`/`--remove-label` adjust the label set incrementally (other
 labels are untouched). The updated issue is re-read and printed.
 
+`--description` / `--description-file` replace the entire description; they
+do not append or patch it. Read the current issue before preparing a targeted
+edit, preserve unrelated human text and links, and apply only the requested
+change. Do not replace a description with a summary of it. Cloud reads lose
+rich-text structure, hyperlink targets and media references, so rewriting the
+normalized text cannot preserve the original rich document. When preservation
+is needed, use an authorized interface that retains ADF, or prepare the precise
+edit for the user and explain this limitation. A dry run cannot detect that loss.
+
 ## Assign
 
 ```bash
@@ -45,8 +65,10 @@ jira-cli issue assign ENG-123 --to alice@example.com
 jira-cli issue assign ENG-123 --unassign
 ```
 
-`--to` accepts a Cloud accountId, a Data Center username, or a display-name/
-email query. On Cloud, non-accountId values are resolved via user search and
+`--to` accepts a Cloud accountId or name/email query, or a known Data Center
+username. Data Center passes the username through without verification; it
+cannot resolve display names or email addresses. On Cloud, non-accountId values
+are resolved via user search and
 must match exactly one active user — `USER_AMBIGUOUS` lists the candidates
 when they don't; pick the accountId from the list. Resolution needs the
 Browse Users permission.
@@ -68,15 +90,26 @@ unambiguous target-status name. Ambiguity and misses fail with the candidate
 list. The issue is re-read after the transition so the output shows the new
 status.
 
+If a post-write read fails or a write's outcome is uncertain, follow
+[errors-and-exit-codes.md](errors-and-exit-codes.md#writes-that-succeeded-or-may-have-succeeded)
+before retrying. A non-zero exit does not mean Jira rejected the change.
+
 ## Comments
 
 ```bash
-jira-cli comment list ENG-123 --all
+jira-cli comment list ENG-123 --limit 25
 jira-cli comment add ENG-123 --body "Deployed to staging."
 echo "Longer text..." | jira-cli comment add ENG-123 --body-file -
 jira-cli comment update 10042 --issue ENG-123 --body "Revised."
 jira-cli comment delete 10042 --issue ENG-123 --yes
 ```
+
+Comments are oldest first. Follow the returned cursor only as needed; use
+`--all` when a complete history is necessary. Before answering an existing
+comment, follow [replying-to-people.md](replying-to-people.md). Jira's CLI has
+no threaded reply flag: `comment add` creates a top-level issue comment, so
+make its intended context clear. `comment update` replaces the whole body;
+read it first and preserve content outside the requested edit.
 
 `comment delete` is destructive: it requires `--yes` (exit 2 with
 `DELETE_NEEDS_YES` otherwise). It takes several IDs at once, or a single `-`

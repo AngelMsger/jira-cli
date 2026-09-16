@@ -49,6 +49,12 @@ These are subtle and each one silently breaks `npm publish`:
 
 ## Cutting a release
 
+Run `make lint`, `make test`, `make e2e`, `make docs`, and `npm test` in
+`build/npm` before tagging. Confirm generated docs are stable on a second
+generation and the companion Skill documents write outcomes, field limitations
+and human-comment reply approval. The mock and fake-transport suites require
+no live Jira service; report any live verification separately.
+
 Before tagging, update [`CHANGELOG.md`](../CHANGELOG.md): rename the
 `[Unreleased]` section to the new version with today's date, add a fresh empty
 `[Unreleased]` heading, and update the comparison links at the bottom. Bump the

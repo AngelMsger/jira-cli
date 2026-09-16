@@ -129,6 +129,20 @@ a read-only session. The wrapper intentionally does not override it.
 
 ## Documentation — keep it current
 
+Before adding a write or a post-write read, follow the outcome contract in
+[`docs/technical-design.md`](docs/technical-design.md#62-errors): preserve known
+resource identity and the original error cause, never advertise replay of a
+confirmed or uncertain mutation, and do not substitute a partial success
+object. Reuse `doWriteJSON` and `GetIssueAfterWrite` for applicable paths. Cover
+both flavors with a write-success/read-failure test and verify no write replay.
+
+The companion Skill must distinguish explicit task authorization from the
+per-human-comment reply gate. Classify authorship, prepare the concrete reply,
+explain the reason once, and reuse approval of that reply. Keep issue writing
+concise, preserve unrelated human text, document lossy Cloud body replacement,
+and start retrieval with bounded pages. Commands, normalized output limits,
+and Data Center username passthrough must match the implementation.
+
 - **Actively maintain the docs.** When a change affects architecture,
   installation, commands, flags, or the release process, update the relevant
   file under [`docs/`](docs/) in the same commit. Stale docs are a defect.

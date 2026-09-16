@@ -61,8 +61,11 @@ Exit code: 5 (`permission`).
 
 ### Per-call override: `--allow-writes`
 
-When you genuinely need to write under a read-only posture, add the root-level
-`--allow-writes` flag:
+When the current task authorizes the concrete write despite a configured
+read-only default, use the root-level `--allow-writes` flag for that invocation.
+Do not override an explicit read-only instruction or change persistent settings
+just because an error suggests it. Existing authorization needs no repeated
+confirmation; unresolved scope needs clarification.
 
 ```bash
 JIRA_CLI_READ_ONLY=1 jira-cli --allow-writes comment add ENG-123 --body "..."
@@ -85,7 +88,7 @@ Read-only protects **the remote Jira service**, not `jira-cli`'s own state.
 
 When you receive a task that involves any mutation:
 
-1. **Always run the operation with `--dry-run` first**, especially if the
+1. **Run the operation with `--dry-run` first**, especially if the
    target resource (issue key, comment ID, transition) was inferred and not
    pasted in literally. Confirm the URL ends with the expected resource.
 2. If the user mentioned "read-only", "don't change anything", or "just

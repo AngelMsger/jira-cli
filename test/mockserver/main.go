@@ -151,6 +151,10 @@ func routes() http.Handler {
 	mux.HandleFunc("POST /rest/api/2/search", search)
 
 	mux.HandleFunc("GET /rest/api/2/issue/{key}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("key") == "ENG-403" {
+			jiraError(w, http.StatusForbidden, "The write succeeded but this issue cannot be read.")
+			return
+		}
 		key := r.PathValue("key")
 		if key == "ENG-404" {
 			jiraError(w, http.StatusNotFound, "Issue does not exist or you do not have permission to see it.")
@@ -167,6 +171,11 @@ func routes() http.Handler {
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body.Fields.Summary == "" {
 			jiraError(w, http.StatusBadRequest, "You must specify a summary of the issue.")
+			return
+		}
+		if body.Fields.Summary == "write succeeds read fails" {
+			w.WriteHeader(http.StatusCreated)
+			writeJSON(w, map[string]any{"id": "10403", "key": "ENG-403"})
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -221,6 +230,10 @@ func routes() http.Handler {
 		writeJSON(w, comment(r.PathValue("id"), body.Body))
 	})
 	mux.HandleFunc("DELETE /rest/api/2/issue/{key}/comment/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("id") == "503" {
+			jiraError(w, http.StatusServiceUnavailable, "Write outcome unknown.")
+			return
+		}
 		if r.PathValue("id") == "404" {
 			jiraError(w, http.StatusNotFound, "Comment does not exist.")
 			return

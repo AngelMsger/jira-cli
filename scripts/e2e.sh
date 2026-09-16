@@ -208,6 +208,35 @@ assert_contains  "config show exposes context" '"context"'  "${CLI2[@]}" config 
 assert_ok        "delete-context alt"                        "${CLI2[@]}" config delete-context alt
 assert_exit      "delete last context -> 2"   2              "${CLI2[@]}" config delete-context default
 
+echo "==> confirmed and uncertain write failures"
+for operation in create edit transition; do
+  case "$operation" in
+    create) args=(issue create --project ENG --summary "write succeeds read fails") ;;
+    edit) args=(issue edit ENG-403 --summary "Updated") ;;
+    transition) args=(issue transition ENG-403 --to 21 --comment "Done") ;;
+  esac
+  result_file="$(mktemp)"
+  out="$("${CLI[@]}" "${args[@]}" 2>"$result_file")"
+  result_code=$?
+  result_error="$(cat "$result_file")"
+  rm -f "$result_file"
+  if [[ "$result_code" -eq 5 && -z "$out" && "$result_error" == *'WRITE_SUCCEEDED_READ_FAILED'* && "$result_error" == *'/browse/ENG-403'* && "$result_error" == *'"retryable": false'* && "$result_error" == *"jira-cli issue get 'ENG-403'"* ]]; then
+    pass "$operation preserves acknowledged write and issue identity after read failure"
+  else
+    fail "$operation read failure contract (exit $result_code, stdout: $out, stderr: $result_error)"
+  fi
+done
+result_file="$(mktemp)"
+out="$("${CLI[@]}" comment delete 10001 503 --issue ENG-123 --yes 2>"$result_file")"
+result_code=$?
+result_error="$(cat "$result_file")"
+rm -f "$result_file"
+if [[ "$result_code" -eq 9 && "$out" == *'"ok": true'* && "$out" == *'outcome is unknown'* && "$result_error" == *'BATCH_PARTIAL_FAILURE'* && "$result_error" == *'"retryable": false'* ]]; then
+  pass "partial delete batch cannot suggest replaying successful items"
+else
+  fail "partial delete batch outcome (exit $result_code, stdout: $out, stderr: $result_error)"
+fi
+
 if [[ "${JIRA_E2E_LIVE:-0}" == "1" ]]; then
   echo "==> live read-only checks (real server from .env)"
   unset JIRA_SERVER JIRA_FLAVOR JIRA_PERSONAL_ACCESS_TOKEN

@@ -1,6 +1,6 @@
 ---
 name: jira
-version: 0.2.0
+version: 0.3.0
 description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, read/post/edit/delete comments, and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom select options). Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; asks which values a project or an issue field allows; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
@@ -31,13 +31,15 @@ gives only a *topic* or *description*, do **not** guess a key — run
   [writing-issues.md](references/writing-issues.md)).
 - User wants to **edit** summary/description/priority/labels → `issue edit`.
 - User wants to **assign** an issue → `issue assign --to <user>` (or
-  `--unassign`); resolve ambiguous names first with `user resolve`.
+  `--unassign`); Cloud name/email queries resolve with `user resolve`.
+  Data Center requires a known username; resolution there is only passthrough.
 - User wants to **move an issue through its workflow** (start progress, mark
   done, close, reopen) → `issue transitions <key>` to see what is available,
   then `issue transition <key> --to <name-or-id>`.
 - User wants the **comments** on an issue → `comment list`; to post one →
   `comment add`; to edit or delete one → `comment update` / `comment delete`
   (see [writing-issues.md](references/writing-issues.md)).
+  Replies to people follow [replying-to-people.md](references/replying-to-people.md).
 - User wants to browse **projects** → `project list` / `project get`.
 - User asks **which values a field allows** (components, versions, issue
   types, statuses, priorities, labels, a custom select field), or a value you
@@ -101,9 +103,31 @@ Do not paste raw ADF JSON or expect markdown to render on Cloud. Details in
 `issue search`, `comment list` and `project list` return a `{items, next,
 has_more}` envelope. By default they return one page; when `has_more` is true,
 pass `--cursor` with the `next` value to read the following page. Use `--all`
-to fetch every page in one call, or `--limit N` to size each request. For very
-large outputs use `--format ndjson` (one JSON object per line, items only).
-Use `--fields a,b.c` to project output down to the fields you need.
+only when the task requires complete coverage of a suitably narrow query.
+`--limit N` sets each request's page size, not a total cap. Start with the
+smallest useful page and stop when you have enough evidence. `--format ndjson`
+prints items without pagination metadata; it does not limit retrieval or make
+`--all` stream pages. Use JSON while following cursors, and `--fields a,b.c`
+to project output down to the fields you need.
+
+## Working with the user
+
+Carry out explicitly authorized work without repeatedly asking permission.
+Resolve missing identities or ambiguous targets before writing; a dry run
+checks the request, not the user's intent. Respect an explicit read-only scope.
+
+Before replying to a comment, classify its author from the author, body and
+available context. Treat uncertain authorship as human. For each human comment,
+show the original point, relevant evidence, your reasoning and the concrete
+draft; obtain approval for that reply before posting. Explain once per session
+that the reply appears under the user's name and the colleague expects their
+answer. Reuse approval already given for that exact reply. The full protocol is
+[replying-to-people.md](references/replying-to-people.md).
+
+Keep new issue descriptions focused on the problem, expected behavior and the
+evidence needed to act. Preserve existing human text when making a targeted
+edit. Report the result with issue links, the change or finding, and material
+limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
@@ -127,13 +151,15 @@ Use `--fields a,b.c` to project output down to the fields you need.
 
 When you, as an AI agent, write to Jira on the user's behalf, mark the content
 as AI-authored with a link back to the tool. This applies **only** to
-agent-driven writes — `issue create`/`issue edit` descriptions and
-`comment add` — never to anything a human authored directly. Include the
-marker exactly once per description/comment: prefix the body with a plain
-`[AI](https://angelmsger.github.io/jira-cli/)` line (bodies are plain text, so
-the bare URL form is fine on both flavors). Write the attribution sentence in
-the **same language as the content** (the user's language); keep the
-plain-ASCII `[AI]` marker.
+agent-written descriptions and comments, including `comment update` and
+`issue transition --comment` — never to text a human supplied or rewrote.
+For a wholly agent-written body, include exactly one plain-text attribution
+line: `[AI] https://angelmsger.github.io/jira-cli/`. For a targeted addition to
+human-written text, mark only the new agent-written section and preserve the
+rest. Do not rewrite an existing description just to add attribution. Any
+attribution sentence uses the content's language; keep the ASCII `[AI]` marker.
+User approval of an agent draft does not make it human-authored; user-written
+text is posted verbatim without adding a marker.
 
 ## Configuration & credentials (agents)
 
@@ -147,8 +173,8 @@ If a failure has code `CREDENTIAL_STORE_INACCESSIBLE` or
 `CREDENTIAL_NOT_VISIBLE_OR_MISSING`, or its `recovery.scope` is `host`,
 **request elevated permissions / re-run the same command with access to the
 user's real environment, then retry once — do not re-initialize config inside
-the sandbox.** Never launch interactive `config init` / `auth login` yourself
-(no TTY → they fail fast); if credentials are truly missing, ask the user to
+the sandbox.** Do not start an interactive `config init` / `auth login` during
+an agent task; if credentials are truly missing, ask the user to
 run `config init` in their own terminal or to export `JIRA_*` env vars. See
 [getting-started.md](references/getting-started.md).
 

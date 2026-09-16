@@ -56,15 +56,19 @@ jira-cli project statuses ENG       # then: status = "In Progress"
 ## Fields
 
 Results carry a curated field set (summary, status, assignee, reporter, type,
-priority, labels, project, parent, created, updated). Widen or narrow it with
-`--field` (repeatable):
+priority, labels, components, fix versions, project, parent, created, updated).
+`--field` replaces the server-side field selection (repeatable):
 
 ```bash
-jira-cli issue search --project ENG --field summary --field duedate
+jira-cli issue search --project ENG --field summary --field description
 ```
 
-This is the *server-side* field list; the output-side `--fields a,b.c`
-projection composes with it.
+Only fields represented by the CLI's normalized issue model appear in output.
+Requesting `duedate` or `customfield_*` does not expose their values: they are
+discarded during normalization. Do not interpret their absence as empty Jira
+data. Use another authorized interface when the task needs unsupported fields.
+The output-side `--fields a,b.c` projection selects normalized output fields;
+it cannot recover discarded data.
 
 ## Pagination
 
@@ -73,20 +77,28 @@ One page per call by default. The envelope is `{items, next, has_more}`:
 ```bash
 jira-cli issue search --project ENG --limit 50          # first page
 jira-cli issue search --project ENG --cursor "<next>"   # continue
-jira-cli issue search --project ENG --all               # walk every page
+jira-cli issue search --project ENG --all               # only for a complete inventory
 ```
 
 The cursor is opaque — pass it back verbatim. (Internally it is a
 `nextPageToken` on Cloud and a `startAt` offset on Data Center; never
 construct one yourself.)
 
+Start with a project and other useful filters. `--limit` controls page size,
+not total results; `--all` collects every page before output. Follow `next`
+only until the task's evidence needs are met, and disclose incomplete coverage.
+
 ## Assignee / reporter values
 
-On Cloud, user-field JQL wants an accountId or an exact display name; on Data
-Center a username. When the user gives you a fuzzy name, resolve it first:
+On Cloud, user-field JQL wants an accountId or an exact display name. Resolve
+a fuzzy Cloud name/email query first:
 
 ```bash
 jira-cli user resolve "alice@example.com"
 ```
+
+On Data Center, supply a known username from existing issue data or the user.
+`user resolve` echoes the input without looking it up; success does not verify
+that the account exists or resolve a display name/email to its username.
 
 `me` and `unassigned` always work and need no resolution.

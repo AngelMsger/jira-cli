@@ -433,9 +433,9 @@ display name (&#34;Component/s&#34;, &#34;Severity&#34;), matched case-insensiti
       <h2>jira-cli issue assign</h2>
       <p class="short">Change or clear an issue&#39;s assignee</p>
       <pre>jira-cli issue assign &lt;key|url&gt; [flags]</pre>
-      <p class="long">Assign an issue. --to accepts a Cloud accountId, a Data Center
-username, or a display-name/email query resolved to a unique user
-(see `jira-cli user resolve`).</p>
+      <p class="long">Assign an issue. --to accepts a Cloud accountId or display-name/email
+query resolved to a unique user (see `jira-cli user resolve`). On Data
+Center, supply a known username; it is passed through without a lookup.</p>
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -483,7 +483,9 @@ markup is rendered server-side).</p>
       <p class="short">Update issue fields</p>
       <pre>jira-cli issue edit &lt;key|url&gt; [flags]</pre>
       <p class="long">Update an issue&#39;s summary, description, priority or labels. Only the
-flags you pass change; everything else keeps its value.</p>
+flags you pass change; everything else keeps its value. Description flags
+replace the whole body. Cloud rich text cannot be preserved by rewriting
+the normalized plain-text description.</p>
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -524,7 +526,8 @@ flags you pass change; everything else keeps its value.</p>
       <p class="long">Search issues. Pass a raw JQL string, or compose one from filter flags
 (--project, --assignee, --status, --type, --label, --text; AND-joined).
 --assignee/--reporter accept &#34;me&#34; (the authenticated user) and
-&#34;unassigned&#34;.</p>
+&#34;unassigned&#34;. --field selects server fields, but only normalized issue
+fields appear in output; due dates and custom fields are not exposed.</p>
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
