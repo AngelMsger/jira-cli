@@ -67,10 +67,13 @@ LDFLAGS="-X github.com/angelmsger/jira-cli/pkg/constants.Version=0.0.1"
 go build -ldflags "$LDFLAGS" -o "$BIN" ./cmd/jira-cli || { echo "build failed"; exit 1; }
 
 echo "==> starting mock Jira server"
-MOCK_LOG="$(mktemp)"
-go run ./test/mockserver >"$MOCK_LOG" 2>/dev/null &
+MOCK_DIR="$(mktemp -d)"
+MOCK_LOG="$MOCK_DIR/server.log"
+trap '[[ -z "${MOCK_PID:-}" ]] || kill "$MOCK_PID" 2>/dev/null || true; rm -rf "$MOCK_DIR"' EXIT
+# Build explicitly so cleanup owns the server PID rather than a go-run wrapper.
+go build -o "$MOCK_DIR/mockserver" ./test/mockserver || exit 1
+"$MOCK_DIR/mockserver" >"$MOCK_LOG" 2>/dev/null &
 MOCK_PID=$!
-trap 'kill "$MOCK_PID" 2>/dev/null' EXIT
 
 MOCK_URL=""
 for _ in $(seq 1 50); do
@@ -166,12 +169,12 @@ SKILL_HOME="$(mktemp -d)"
 assert_contains  "skill install for Codex" '"alignment": "current"' \
                                           env HOME="$SKILL_HOME" "${CLI[@]}" skill install --agent codex
 assert_contains  "skill status version aligned" '"loaded_status": "current"' \
-                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL=0.3.1 "${CLI[@]}" skill status
+                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL=0.3.2 "${CLI[@]}" skill status
 assert_err_contains "legacy Skill handshake is detected" '"status":"unknown"' \
                                           env HOME="$SKILL_HOME" JIRA_CLI_SKILL=1 JIRA_CLI_NO_UPDATE_NOTIFIER=1 "${CLI[@]}" issue get ENG-404
 assert_exit      "missing issue -> 6"     6                "${CLI[@]}" issue get ENG-404
 assert_err_contains "update notice includes Skill refresh" '"next_steps"' \
-                                          env JIRA_CLI_SKILL=0.3.1 "${CLI[@]}" issue get ENG-404
+                                          env JIRA_CLI_SKILL=0.3.2 "${CLI[@]}" issue get ENG-404
 assert_exit      "bad flag -> 2"          2                "${CLI[@]}" issue get ENG-1 --bogus
 assert_exit      "unknown subcommand -> 2" 2               "${CLI[@]}" issue frobnicate
 assert_err_contains "unknown subcommand suggests" "UNKNOWN_COMMAND" \
@@ -259,4 +262,5 @@ fi
 
 echo
 echo "==> e2e summary: $PASS passed, $FAIL failed"
-[[ "$FAIL" -eq 0 ]]
+if [[ "$FAIL" -ne 0 ]]; then exit 1; fi
+"$ROOT/scripts/e2e-setup.sh"

@@ -1,6 +1,6 @@
 ---
 name: jira
-version: 0.3.1
+version: 0.3.2
 description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, read/post/edit/delete comments, and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom select options). Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; asks which values a project or an issue field allows; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
@@ -131,7 +131,7 @@ limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
-- **Skill handshake — set `JIRA_CLI_SKILL=0.3.1`.** Once you have loaded
+- **Skill handshake — set `JIRA_CLI_SKILL=0.3.2`.** Once you have loaded
   this Skill, export that exact value in the environment used to run the CLI.
   The CLI compares it with the embedded Skill version and emits a structured
   stderr notice when the Skill is missing, old, or uses the legacy unversioned
@@ -185,3 +185,25 @@ run `config init` in their own terminal or to export `JIRA_*` env vars. See
 `--format json|table|ndjson` · `--fields a,b.c` (project fields) ·
 `--base-url` · `--flavor cloud|datacenter` · `--config <dir>` ·
 `--use-context <name>` (pick a named server) · `--allow-writes` · `--verbose`
+
+## Team service presets and authentication
+
+- Inspect existing configuration and reuse it. `config set-context <name>` is the
+  offline installer entrypoint; it accepts `--base-url`, `--auth-scheme`,
+  `--credential-url`, `--activate`, `--overwrite`, and `--dry-run`, plus `--flavor`.
+- `JIRA_AUTH_SCHEME` and `JIRA_CREDENTIAL_URL` complement the existing
+  service variables. Presets never copy a personal username or secret from the
+  environment. Conflicts preserve existing values unless explicitly overwritten.
+- Run `auth guide` to obtain the current instance's credential page, its source,
+  navigation steps, and limitations. Links are hints, not evidence of server
+  capabilities. Follow the returned product-specific instructions; do not invent
+  a token URL or assume ingestion credentials authorize queries.
+- Once a service is preset, direct the member to `auth login` in their terminal
+  to save their verified personal identity and secret. Do not ask for secrets in
+  chat. In non-interactive environments use transient credential variables.
+- Preserve host-keychain recovery for inaccessible credentials. A server/context
+  mismatch requires selecting or creating a matching context; a partial login
+  write error identifies what was stored and provides recovery steps.
+
+See [team setup](references/team-setup.md) for the output fields, conflict
+semantics, credential URL overrides, and failure recovery.

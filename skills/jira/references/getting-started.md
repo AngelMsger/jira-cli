@@ -92,3 +92,5 @@ jira-cli config get-contexts
 jira-cli config use-context prod
 jira-cli --use-context staging issue search --project ENG   # one-off
 ```
+
+For preset team services, use `config set-context` and `auth guide` before personal login; see [team setup](team-setup.md).

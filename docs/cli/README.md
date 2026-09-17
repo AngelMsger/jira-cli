@@ -9,7 +9,8 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | Command | Description |
 | --- | --- |
 | [`jira-cli auth`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth) | Inspect and manage stored credentials |
-| [`jira-cli auth login`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-login) | Store a credential for the configured server |
+| [`jira-cli auth guide`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-guide) | Show offline credential acquisition guidance for this service |
+| [`jira-cli auth login`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-login) | Verify and store personal credentials for the configured service |
 | [`jira-cli auth logout`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-logout) | Remove the stored credential for the configured server |
 | [`jira-cli auth status`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-status) | Show whether a usable credential is configured |
 
@@ -32,6 +33,7 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | [`jira-cli config get-contexts`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-get-contexts) | List the configured contexts |
 | [`jira-cli config init`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-init) | Interactively set up server URL and credentials |
 | [`jira-cli config path`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-path) | Print the config file path |
+| [`jira-cli config set-context`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-set-context) | Configure service presets without credentials or network access |
 | [`jira-cli config show`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-show) | Show the resolved configuration |
 | [`jira-cli config use-context`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-config-use-context) | Switch the current context |
 

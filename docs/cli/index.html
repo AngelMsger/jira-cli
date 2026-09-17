@@ -27,6 +27,7 @@
     <div class="side-group">
       <div class="side-title">auth</div>
       <a href="#jira-cli-auth">jira-cli auth</a>
+      <a href="#jira-cli-auth-guide">jira-cli auth guide</a>
       <a href="#jira-cli-auth-login">jira-cli auth login</a>
       <a href="#jira-cli-auth-logout">jira-cli auth logout</a>
       <a href="#jira-cli-auth-status">jira-cli auth status</a>
@@ -46,6 +47,7 @@
       <a href="#jira-cli-config-get-contexts">jira-cli config get-contexts</a>
       <a href="#jira-cli-config-init">jira-cli config init</a>
       <a href="#jira-cli-config-path">jira-cli config path</a>
+      <a href="#jira-cli-config-set-context">jira-cli config set-context</a>
       <a href="#jira-cli-config-show">jira-cli config show</a>
       <a href="#jira-cli-config-use-context">jira-cli config use-context</a>
       </div>
@@ -113,7 +115,7 @@
       <div class="side-title">whoami</div>
       <a href="#jira-cli-whoami">jira-cli whoami</a>
       </div>
-    
+
   </aside>
   <main class="cli-main">
     <span class="eyebrow">Reference</span>
@@ -137,8 +139,10 @@ After a CLI upgrade, refresh the Skill and reload the agent context.</p>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
         <tbody>
         <tr><td><code>--allow-writes</code></td><td><code>false</code></td><td>override read-only mode (defaults.read_only / JIRA_CLI_READ_ONLY) for this invocation</td></tr>
+        <tr><td><code>--auth-scheme</code></td><td></td><td>authentication scheme (overrides environment and config)</td></tr>
         <tr><td><code>--base-url</code></td><td></td><td>Jira site URL (overrides config)</td></tr>
         <tr><td><code>--config</code></td><td></td><td>config directory (default ~/.angelmsger/jira)</td></tr>
+        <tr><td><code>--credential-url</code></td><td></td><td>credential acquisition page URL (display only)</td></tr>
         <tr><td><code>--fields</code></td><td></td><td>comma-separated dot-path fields to keep</td></tr>
         <tr><td><code>--flavor</code></td><td></td><td>backend flavor: cloud, datacenter or auto</td></tr>
         <tr><td><code>--format, -f</code></td><td></td><td>output format: json, table or ndjson</td></tr>
@@ -150,53 +154,61 @@ After a CLI upgrade, refresh the Skill and reload the agent context.</p>
       </table>
     </section>
 
-    
+
     <section class="cmd" id="jira-cli-auth">
       <h2>jira-cli auth</h2>
       <p class="short">Inspect and manage stored credentials</p>
       <pre>jira-cli auth</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
+    <section class="cmd" id="jira-cli-auth-guide">
+      <h2>jira-cli auth guide</h2>
+      <p class="short">Show offline credential acquisition guidance for this service</p>
+      <pre>jira-cli auth guide</pre>
+
+
+
+    </section>
+
     <section class="cmd" id="jira-cli-auth-login">
       <h2>jira-cli auth login</h2>
-      <p class="short">Store a credential for the configured server</p>
+      <p class="short">Verify and store personal credentials for the configured service</p>
       <pre>jira-cli auth login</pre>
-      <p class="long">Prompt for a secret and store it securely. Run `config init` first if the server URL is not set.</p>
-      
-      <h3>Examples</h3><pre>  jira-cli auth login
-  jira-cli --use-context staging auth login</pre>
+      <p class="long">Reuse the configured service, show its credential acquisition page, and store a verified credential together with its username. Requires a terminal; use credential environment variables for non-interactive execution.</p>
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-auth-logout">
       <h2>jira-cli auth logout</h2>
       <p class="short">Remove the stored credential for the configured server</p>
       <pre>jira-cli auth logout</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-auth-status">
       <h2>jira-cli auth status</h2>
       <p class="short">Show whether a usable credential is configured</p>
       <pre>jira-cli auth status</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-comment">
       <h2>jira-cli comment</h2>
       <p class="short">Read and post issue comments</p>
       <pre>jira-cli comment</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-comment-add">
       <h2>jira-cli comment add</h2>
       <p class="short">Post a comment on an issue</p>
@@ -216,7 +228,7 @@ markup is rendered server-side).</p>
       <h3>Examples</h3><pre>  jira-cli comment add PROJ-123 --body &#34;Deployed to staging.&#34;
   echo &#34;Done.&#34; | jira-cli comment add PROJ-123 --body-file -</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-comment-delete">
       <h2>jira-cli comment delete</h2>
       <p class="short">Delete one or more comments</p>
@@ -237,12 +249,12 @@ applies to the whole batch.</p>
       <h3>Examples</h3><pre>  jira-cli comment delete 10042 --issue PROJ-123 --yes
   jira-cli comment delete 10042 10043 --issue PROJ-123 --yes</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-comment-list">
       <h2>jira-cli comment list</h2>
       <p class="short">List an issue&#39;s comments (oldest first)</p>
       <pre>jira-cli comment list &lt;issue-key|url&gt; [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -255,12 +267,12 @@ applies to the whole batch.</p>
       <h3>Examples</h3><pre>  jira-cli comment list PROJ-123
   jira-cli comment list PROJ-123 --all</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-comment-update">
       <h2>jira-cli comment update</h2>
       <p class="short">Replace a comment&#39;s body</p>
       <pre>jira-cli comment update &lt;comment-id&gt; --issue &lt;key&gt; [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -274,36 +286,36 @@ applies to the whole batch.</p>
       <h3>Examples</h3><pre>  jira-cli comment update 10042 --issue PROJ-123 --body &#34;Revised.&#34;
   echo &#34;Revised.&#34; | jira-cli comment update 10042 --issue PROJ-123 --body-file -</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-config">
       <h2>jira-cli config</h2>
       <p class="short">Manage jira-cli configuration</p>
       <pre>jira-cli config</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-config-delete-context">
       <h2>jira-cli config delete-context</h2>
       <p class="short">Delete a context and its stored credential</p>
       <pre>jira-cli config delete-context &lt;name&gt;</pre>
-      
-      
+
+
       <h3>Examples</h3><pre>  jira-cli config delete-context staging</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-config-get-contexts">
       <h2>jira-cli config get-contexts</h2>
       <p class="short">List the configured contexts</p>
       <pre>jira-cli config get-contexts</pre>
       <p class="long">List every context in the config file. The current context — the one
 used when --use-context is not given — is marked.</p>
-      
+
       <h3>Examples</h3><pre>  jira-cli config get-contexts
   jira-cli config get-contexts --format table</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-config-init">
       <h2>jira-cli config init</h2>
       <p class="short">Interactively set up server URL and credentials</p>
@@ -311,25 +323,43 @@ used when --use-context is not given — is marked.</p>
       <p class="long">Run the interactive setup wizard. It collects a server URL, detects
 the flavor, validates a credential and stores it. The wizard can also
 configure additional named contexts for working with several servers.</p>
-      
+
       <h3>Examples</h3><pre>  jira-cli config init --pretty   # interactive TUI (recommended)
   jira-cli config init             # plain line-by-line wizard (scripts, non-TTY)</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-config-path">
       <h2>jira-cli config path</h2>
       <p class="short">Print the config file path</p>
       <pre>jira-cli config path</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
+    <section class="cmd" id="jira-cli-config-set-context">
+      <h2>jira-cli config set-context</h2>
+      <p class="short">Configure service presets without credentials or network access</p>
+      <pre>jira-cli config set-context &lt;name&gt; [flags]</pre>
+      <p class="long">Write service fields from flags, environment or .env over the named target context. Personal environment fields and secrets are ignored. Existing conflicting fields require --overwrite; unrelated contexts and user identities are preserved.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--activate</code></td><td><code>false</code></td><td>make this the current context</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview configuration changes without writing files or credentials</td></tr>
+        <tr><td><code>--overwrite</code></td><td><code>false</code></td><td>update conflicting service fields; preserve personal identity and credentials</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli config set-context team --base-url https://service.example.com --dry-run
+  jira-cli config set-context team --base-url https://service.example.com --activate</pre>
+    </section>
+
     <section class="cmd" id="jira-cli-config-show">
       <h2>jira-cli config show</h2>
       <p class="short">Show the resolved configuration</p>
       <pre>jira-cli config show [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -337,24 +367,24 @@ configure additional named contexts for working with several servers.</p>
         <tr><td><code>--explain</code></td><td><code>false</code></td><td>annotate each value with its source</td></tr>
         </tbody>
       </table>
-      
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-config-use-context">
       <h2>jira-cli config use-context</h2>
       <p class="short">Switch the current context</p>
       <pre>jira-cli config use-context &lt;name&gt;</pre>
       <p class="long">Set the current context — the server used by default. Override it for
 a single command with the global --use-context flag instead.</p>
-      
+
       <h3>Examples</h3><pre>  jira-cli config use-context staging</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-doctor">
       <h2>jira-cli doctor</h2>
       <p class="short">Diagnose configuration, credentials and connectivity</p>
       <pre>jira-cli doctor [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -365,16 +395,16 @@ a single command with the global --use-context flag instead.</p>
       <h3>Examples</h3><pre>  jira-cli doctor
   jira-cli doctor --no-update-check</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-field">
       <h2>jira-cli field</h2>
       <p class="short">Discover issue fields and their allowed values</p>
       <pre>jira-cli field</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-field-list">
       <h2>jira-cli field list</h2>
       <p class="short">List the fields on an issue type&#39;s create screen</p>
@@ -395,7 +425,7 @@ their customfield_* id.</p>
       <h3>Examples</h3><pre>  jira-cli field list --project ENG --type Bug
   jira-cli field list --project ENG --type Bug --fields items.id,items.name,items.required</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-field-options">
       <h2>jira-cli field options</h2>
       <p class="short">List a field&#39;s allowed values in a project</p>
@@ -420,16 +450,16 @@ display name (&#34;Component/s&#34;, &#34;Severity&#34;), matched case-insensiti
       <h3>Examples</h3><pre>  jira-cli field options components --project ENG
   jira-cli field options &#34;Severity&#34; --project ENG --type Bug</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue">
       <h2>jira-cli issue</h2>
       <p class="short">Read, search and write Jira issues</p>
       <pre>jira-cli issue</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-assign">
       <h2>jira-cli issue assign</h2>
       <p class="short">Change or clear an issue&#39;s assignee</p>
@@ -449,7 +479,7 @@ Center, supply a known username; it is passed through without a lookup.</p>
       <h3>Examples</h3><pre>  jira-cli issue assign PROJ-123 --to alice@example.com
   jira-cli issue assign PROJ-123 --unassign</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-create">
       <h2>jira-cli issue create</h2>
       <p class="short">Create an issue</p>
@@ -478,7 +508,7 @@ markup is rendered server-side).</p>
   jira-cli issue create --project ENG --type Bug --summary &#34;...&#34; \
       --description-file report.txt --assignee alice@example.com --label urgent</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-edit">
       <h2>jira-cli issue edit</h2>
       <p class="short">Update issue fields</p>
@@ -503,12 +533,12 @@ the normalized plain-text description.</p>
       <h3>Examples</h3><pre>  jira-cli issue edit PROJ-123 --summary &#34;New title&#34;
   jira-cli issue edit PROJ-123 --add-label triaged --remove-label urgent</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-get">
       <h2>jira-cli issue get</h2>
       <p class="short">Show one issue</p>
       <pre>jira-cli issue get &lt;key|url&gt; [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -519,7 +549,7 @@ the normalized plain-text description.</p>
       <h3>Examples</h3><pre>  jira-cli issue get PROJ-123
   jira-cli issue get https://acme.atlassian.net/browse/PROJ-123</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-search">
       <h2>jira-cli issue search</h2>
       <p class="short">Search issues with JQL or filter flags</p>
@@ -551,7 +581,7 @@ fields appear in output; due dates and custom fields are not exposed.</p>
   jira-cli issue search --project ENG --assignee me --order-by &#34;updated DESC&#34;
   jira-cli issue search --text &#34;login crash&#34; --all</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-transition">
       <h2>jira-cli issue transition</h2>
       <p class="short">Move an issue through a workflow transition</p>
@@ -571,26 +601,26 @@ case-insensitively against the transitions currently available; see
       <h3>Examples</h3><pre>  jira-cli issue transition PROJ-123 --to &#34;In Progress&#34;
   jira-cli issue transition PROJ-123 --to 31 --comment &#34;Deployed to staging.&#34;</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-issue-transitions">
       <h2>jira-cli issue transitions</h2>
       <p class="short">List the workflow transitions currently available on an issue</p>
       <pre>jira-cli issue transitions &lt;key|url&gt;</pre>
       <p class="long">List the transitions the issue can take from its current status —
 the values `issue transition --to` accepts.</p>
-      
+
       <h3>Examples</h3><pre>  jira-cli issue transitions PROJ-123</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-label">
       <h2>jira-cli label</h2>
       <p class="short">Browse issue labels</p>
       <pre>jira-cli label</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-label-list">
       <h2>jira-cli label list</h2>
       <p class="short">List issue labels (Jira Cloud only)</p>
@@ -610,16 +640,16 @@ them (e.g. `issue search --project X --field labels`).</p>
       </table>
       <h3>Examples</h3><pre>  jira-cli label list</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-priority">
       <h2>jira-cli priority</h2>
       <p class="short">Browse issue priorities</p>
       <pre>jira-cli priority</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-priority-list">
       <h2>jira-cli priority list</h2>
       <p class="short">List issue priorities</p>
@@ -638,16 +668,16 @@ Cloud a priority scheme may narrow what a given project accepts.</p>
       </table>
       <h3>Examples</h3><pre>  jira-cli priority list</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project">
       <h2>jira-cli project</h2>
       <p class="short">Browse Jira projects</p>
       <pre>jira-cli project</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-components">
       <h2>jira-cli project components</h2>
       <p class="short">List a project&#39;s components</p>
@@ -666,16 +696,16 @@ on Data Center the API returns the full list in one response.</p>
       </table>
       <h3>Examples</h3><pre>  jira-cli project components ENG</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-get">
       <h2>jira-cli project get</h2>
       <p class="short">Show one project</p>
       <pre>jira-cli project get &lt;key|url&gt;</pre>
-      
-      
+
+
       <h3>Examples</h3><pre>  jira-cli project get ENG</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-issuetypes">
       <h2>jira-cli project issuetypes</h2>
       <p class="short">List the issue types creatable in a project</p>
@@ -694,7 +724,7 @@ metadata, so permissions apply) — the valid values for
       </table>
       <h3>Examples</h3><pre>  jira-cli project issuetypes ENG</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-list">
       <h2>jira-cli project list</h2>
       <p class="short">List projects visible to the authenticated user</p>
@@ -715,7 +745,7 @@ response (a single page) and --query filters client-side.</p>
       <h3>Examples</h3><pre>  jira-cli project list
   jira-cli project list --query platform</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-statuses">
       <h2>jira-cli project statuses</h2>
       <p class="short">List a project&#39;s workflow statuses per issue type</p>
@@ -723,10 +753,10 @@ response (a single page) and --query filters client-side.</p>
       <p class="long">List the workflow statuses valid in a project, grouped by issue type
 (different issue types can use different workflows). These are the
 values a `status = ...` JQL clause can match in that project.</p>
-      
+
       <h3>Examples</h3><pre>  jira-cli project statuses ENG</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-project-versions">
       <h2>jira-cli project versions</h2>
       <p class="short">List a project&#39;s versions</p>
@@ -746,16 +776,16 @@ response.</p>
       </table>
       <h3>Examples</h3><pre>  jira-cli project versions ENG</pre>
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill">
       <h2>jira-cli skill</h2>
       <p class="short">Install the companion Skill for coding agents</p>
       <pre>jira-cli skill</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill-install">
       <h2>jira-cli skill install</h2>
       <p class="short">Deploy the embedded Skill into a coding agent&#39;s skills directory</p>
@@ -774,14 +804,14 @@ Skill to the matching version, then reload the agent context.</p>
         <tr><td><code>--project</code></td><td><code>false</code></td><td>install into each agent&#39;s project skills directory instead of $HOME</td></tr>
         </tbody>
       </table>
-      
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill-path">
       <h2>jira-cli skill path</h2>
       <p class="short">Print Skill paths, installation state and version alignment</p>
       <pre>jira-cli skill path [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -791,23 +821,23 @@ Skill to the matching version, then reload the agent context.</p>
         <tr><td><code>--project</code></td><td><code>false</code></td><td>use the project skills directories instead of $HOME</td></tr>
         </tbody>
       </table>
-      
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill-show">
       <h2>jira-cli skill show</h2>
       <p class="short">Print the embedded SKILL.md to stdout</p>
       <pre>jira-cli skill show</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill-status">
       <h2>jira-cli skill status</h2>
       <p class="short">Report loaded, installed and embedded Skill versions</p>
       <pre>jira-cli skill status [flags]</pre>
-      
+
       <h3>Options</h3>
       <table>
         <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
@@ -815,9 +845,9 @@ Skill to the matching version, then reload the agent context.</p>
         <tr><td><code>--project</code></td><td><code>false</code></td><td>check each agent&#39;s project skills directory instead of $HOME</td></tr>
         </tbody>
       </table>
-      
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-skill-uninstall">
       <h2>jira-cli skill uninstall</h2>
       <p class="short">Remove the companion Skill from a coding agent&#39;s skills directory</p>
@@ -834,27 +864,27 @@ and removes the Skill from each one found.</p>
         <tr><td><code>--project</code></td><td><code>false</code></td><td>remove from each agent&#39;s project skills directory instead of $HOME</td></tr>
         </tbody>
       </table>
-      
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-user">
       <h2>jira-cli user</h2>
       <p class="short">Discover Jira users — the values assignee flags accept</p>
       <pre>jira-cli user</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-user-me">
       <h2>jira-cli user me</h2>
       <p class="short">Print the user the configured credentials authenticate as (alias for whoami)</p>
       <pre>jira-cli user me</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-user-resolve">
       <h2>jira-cli user resolve</h2>
       <p class="short">Resolve a user selector to a unique user</p>
@@ -864,28 +894,28 @@ and removes the Skill from each one found.</p>
 Cloud: an accountId is passed through; anything else is searched by
 display name / email and must match exactly one active user.
 DC:    the selector is the username and is echoed back verbatim.</p>
-      
-      
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-version">
       <h2>jira-cli version</h2>
       <p class="short">Print version information</p>
       <pre>jira-cli version</pre>
-      
-      
-      
+
+
+
     </section>
-    
+
     <section class="cmd" id="jira-cli-whoami">
       <h2>jira-cli whoami</h2>
       <p class="short">Print the user the configured credentials authenticate as</p>
       <pre>jira-cli whoami</pre>
-      
-      
+
+
       <h3>Examples</h3><pre>  jira-cli whoami</pre>
     </section>
-    
+
   </main>
 </div>
 <footer class="footer">
