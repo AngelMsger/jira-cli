@@ -219,6 +219,12 @@ func (c *apiClient) DescribeWrite(ctx context.Context, op any) (WriteRequestPlan
 		method, path, payload, err = c.buildUpdateComment(v)
 	case DeleteCommentReq:
 		method, path, err = c.buildDeleteComment(v)
+	case AddWorklogReq:
+		method, path, payload, err = c.buildAddWorklog(v)
+	case UpdateWorklogReq:
+		method, path, payload, err = c.buildUpdateWorklog(v)
+	case DeleteWorklogReq:
+		method, path, err = c.buildDeleteWorklog(v)
 	default:
 		return WriteRequestPlan{}, cerrors.Newf(cerrors.CategoryInternal, "UNKNOWN_WRITE_OP",
 			"DescribeWrite: unsupported operation type %T", op)

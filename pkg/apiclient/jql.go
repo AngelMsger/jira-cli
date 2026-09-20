@@ -17,6 +17,15 @@ type JQLParams struct {
 	Label    string // label (labels = "...")
 	Text     string // free-text match (text ~ "...")
 	OrderBy  string // sort clause, e.g. "updated DESC"
+
+	// WorklogAuthor matches issues carrying a worklog by this user;
+	// "me" = currentUser(). WorklogDateFrom/To bound those worklogs by date.
+	// Jira's worklogDate has day granularity and is evaluated in the
+	// instance's timezone, so these clauses select candidates only — an exact
+	// instant window must be applied to each worklog's `started` value.
+	WorklogAuthor   string
+	WorklogDateFrom string // YYYY-MM-DD, inclusive
+	WorklogDateTo   string // YYYY-MM-DD, inclusive
 }
 
 // IsEmpty reports whether no filter was supplied.
@@ -48,6 +57,15 @@ func BuildJQL(p JQLParams) (string, error) {
 	}
 	if p.Text != "" {
 		clauses = append(clauses, `text ~ `+quote(p.Text))
+	}
+	if p.WorklogAuthor != "" {
+		clauses = append(clauses, userClause("worklogAuthor", p.WorklogAuthor))
+	}
+	if p.WorklogDateFrom != "" {
+		clauses = append(clauses, `worklogDate >= `+quote(p.WorklogDateFrom))
+	}
+	if p.WorklogDateTo != "" {
+		clauses = append(clauses, `worklogDate <= `+quote(p.WorklogDateTo))
 	}
 	if len(clauses) == 0 {
 		return "", cerrors.New(cerrors.CategoryUsage, "JQL_EMPTY",

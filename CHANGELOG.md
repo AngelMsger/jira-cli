@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-20
+
+### Added
+
+- **Time tracking: read and maintain Jira worklogs.**
+  - `worklog list <key>` reads an issue's worklogs in the standard
+    `{items, next, has_more}` envelope; every item carries its `issue_key` and
+    both `time_spent` (Jira's human form) and `time_spent_seconds`.
+  - `worklog add/update/delete` log, correct and remove entries. Writes accept
+    `--dry-run`, are blocked by read-only posture, and `delete` needs `--yes`
+    and accepts several IDs or `-` for stdin.
+  - `--time-spent` takes Jira's own units (`"3h 20m"`) and is forwarded
+    verbatim, because `w`/`d` expand from the instance's time-tracking
+    configuration; the shape is validated before any request is sent.
+    `--time-spent-seconds` is the unambiguous alternative.
+  - `--started` accepts `now`, an RFC 3339 instant, a local wall clock or a
+    UTC date, and is normalized into the colon-free instant Jira requires.
+  - `--adjust-estimate auto|new|leave|manual`, with `--new-estimate`,
+    `--reduce-by` and `--increase-by`, controls the remaining estimate. The
+    parameters ride on the request path, so `--dry-run` previews the exact
+    query string. `manual` is rejected on `update`, which Jira does not
+    support.
+  - `worklog search --author me --since 7d` finds one user's worklogs across
+    issues. A bounded window is mandatory; `--since`/`--from`/`--to` follow the
+    family's half-open `[from, to)` contract, the author is matched on a stable
+    backend identity, and coverage gaps surface as `WORKLOG_SOURCE_FAILED` and
+    `WORKLOG_ACTOR_COVERAGE` stderr notices instead of a silently short result.
+- Add `skills/jira/references/tracking-time.md` and document the worklog error
+  codes and dry-run previews in the existing Skill references. Skill bumped to
+  `0.4.0`.
+
 ## [0.5.0] - 2026-09-17
 
 ### Added
@@ -185,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/AngelMsger/jira-cli/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/AngelMsger/jira-cli/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/AngelMsger/jira-cli/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/AngelMsger/jira-cli/compare/v0.3.0...v0.4.0

@@ -153,6 +153,63 @@ assert_contains  "comment delete --yes"   "deleted"        "${CLI[@]}" comment d
 assert_contains  "comment delete dry-run" '"dry_run": true' \
                                           "${CLI[@]}" comment delete 10001 --issue ENG-1 --dry-run
 assert_contains  "user resolve (DC passthrough)" "alice"   "${CLI[@]}" user resolve alice
+
+# Worklogs (time tracking). --time-spent is forwarded verbatim in Jira's own
+# units; the estimate-adjustment flags ride on the query string, so --dry-run
+# previews exactly what the live request sends.
+assert_contains  "worklog list"           '"time_spent": "3h 20m"' "${CLI[@]}" worklog list ENG-1
+assert_contains  "worklog list stamps the issue" '"issue_key": "ENG-1"' "${CLI[@]}" worklog list ENG-1
+assert_contains  "worklog add"            '"time_spent_seconds"' \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent "3h 20m" --comment "Investigated"
+assert_contains  "worklog add with seconds" '"id"' \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent-seconds 1800
+assert_contains  "worklog add normalizes --started" '2026-09-19T09:00:00.000' \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent 1h --started 2026-09-19T09:00:00+08:00 --dry-run
+assert_exit      "worklog add needs a duration -> 2" 2    "${CLI[@]}" worklog add ENG-1
+assert_exit      "worklog rejects a Go duration -> 2" 2   "${CLI[@]}" worklog add ENG-1 --time-spent 1h30m0s
+assert_err_contains "worklog rejects both time flags" "WORKLOG_TIME_SPENT_CONFLICT" \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent 1h --time-spent-seconds 60
+assert_contains  "worklog update"         '"id"' \
+                                          "${CLI[@]}" worklog update 200 --issue ENG-1 --time-spent 2h
+assert_err_contains "worklog update needs a change" "WORKLOG_NO_UPDATE_FIELDS" \
+                                          "${CLI[@]}" worklog update 200 --issue ENG-1
+assert_exit      "worklog delete needs --yes -> 2" 2      "${CLI[@]}" worklog delete 200 --issue ENG-1 </dev/null
+assert_contains  "worklog delete --yes"   "deleted"       "${CLI[@]}" worklog delete 200 --issue ENG-1 --yes
+assert_contains  "worklog delete dry-run" '"dry_run": true' \
+                                          "${CLI[@]}" worklog delete 200 --issue ENG-1 --dry-run
+
+# Remaining-estimate control: the validation matrix, and the query string in
+# the dry-run preview.
+assert_contains  "worklog --adjust-estimate new previews the query" "adjustEstimate=new&newEstimate=2d" \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent 1h --adjust-estimate new --new-estimate 2d --dry-run
+assert_contains  "worklog delete --adjust-estimate manual previews increaseBy" "increaseBy=1h" \
+                                          "${CLI[@]}" worklog delete 200 --issue ENG-1 --adjust-estimate manual --increase-by 1h --dry-run
+assert_err_contains "unknown --adjust-estimate" "WORKLOG_BAD_ADJUST_ESTIMATE" \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent 1h --adjust-estimate shrink
+assert_err_contains "--adjust-estimate new needs --new-estimate" "WORKLOG_ESTIMATE_FLAG_MISSING" \
+                                          "${CLI[@]}" worklog add ENG-1 --time-spent 1h --adjust-estimate new
+assert_err_contains "manual is unsupported on update" "WORKLOG_ESTIMATE_FLAG_UNSUPPORTED" \
+                                          "${CLI[@]}" worklog update 200 --issue ENG-1 --time-spent 1h --adjust-estimate manual
+
+# A worklog ID is only discoverable via `worklog list`, so the missing-ID and
+# missing-issue errors must name it.
+assert_err_contains "worklog update without --issue names the flag" "issue" \
+                                          "${CLI[@]}" worklog update 200
+assert_err_contains "worklog write error names its discovery command" "worklog list" \
+                                          "${CLI[@]}" worklog update "" --issue ENG-1 --time-spent 1h
+
+# Cross-issue search is a multi-resource query: the window is mandatory, and
+# each item carries the issue it came from.
+assert_err_contains "worklog search needs a window" "WORKLOG_TIME_REQUIRED" \
+                                          "${CLI[@]}" worklog search
+assert_err_contains "worklog search rejects --since with --from" "BAD_TIME_RANGE" \
+                                          "${CLI[@]}" worklog search --since 7d --from 2026-01-01
+assert_contains  "worklog search returns source context" '"issue_key"' \
+                                          "${CLI[@]}" worklog search --from 2025-12-01 --to 2026-12-01
+assert_contains  "worklog search filters by window" '"time_spent": "3h 20m"' \
+                                          "${CLI[@]}" worklog search --from 2025-12-01 --to 2026-12-01 --all
+assert_contains  "worklog search excludes an out-of-window entry" '"items": []' \
+                                          "${CLI[@]}" worklog search --from 2020-01-01 --to 2020-02-01
 SKILL_DIR="$(mktemp -d)"
 assert_contains  "skill install"          '"installed"' \
                                           "${CLI[@]}" skill install --dir "$SKILL_DIR"
@@ -169,12 +226,12 @@ SKILL_HOME="$(mktemp -d)"
 assert_contains  "skill install for Codex" '"alignment": "current"' \
                                           env HOME="$SKILL_HOME" "${CLI[@]}" skill install --agent codex
 assert_contains  "skill status version aligned" '"loaded_status": "current"' \
-                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL=0.3.2 "${CLI[@]}" skill status
+                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL=0.4.0 "${CLI[@]}" skill status
 assert_err_contains "legacy Skill handshake is detected" '"status":"unknown"' \
                                           env HOME="$SKILL_HOME" JIRA_CLI_SKILL=1 JIRA_CLI_NO_UPDATE_NOTIFIER=1 "${CLI[@]}" issue get ENG-404
 assert_exit      "missing issue -> 6"     6                "${CLI[@]}" issue get ENG-404
 assert_err_contains "update notice includes Skill refresh" '"next_steps"' \
-                                          env JIRA_CLI_SKILL=0.3.2 "${CLI[@]}" issue get ENG-404
+                                          env JIRA_CLI_SKILL=0.4.0 "${CLI[@]}" issue get ENG-404
 assert_exit      "bad flag -> 2"          2                "${CLI[@]}" issue get ENG-1 --bogus
 assert_exit      "unknown subcommand -> 2" 2               "${CLI[@]}" issue frobnicate
 assert_err_contains "unknown subcommand suggests" "UNKNOWN_COMMAND" \
@@ -195,6 +252,16 @@ assert_contains     "--allow-writes overrides read-only"   "deleted" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" --allow-writes comment delete 10001 --issue ENG-1 --yes
 assert_err_contains "read-only blocks comment add"   "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" comment add ENG-1 --body "x"
+assert_err_contains "read-only blocks worklog add"   "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" worklog add ENG-1 --time-spent 1h
+assert_err_contains "read-only blocks worklog update" "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" worklog update 200 --issue ENG-1 --time-spent 1h
+assert_exit         "read-only blocks worklog delete -> 5" 5 \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" worklog delete 200 --issue ENG-1 --yes
+assert_contains     "read-only + worklog --dry-run still previews" '"method": "POST"' \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" worklog add ENG-1 --time-spent 1h --dry-run
+assert_contains     "--allow-writes overrides read-only for worklogs" "deleted" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" --allow-writes worklog delete 200 --issue ENG-1 --yes
 
 echo "==> multi-context checks"
 TMPCFG2="$(mktemp -d)"

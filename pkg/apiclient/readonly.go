@@ -56,3 +56,14 @@ func (r *readOnlyClient) UpdateComment(_ context.Context, _ UpdateCommentReq) (*
 func (r *readOnlyClient) DeleteComment(_ context.Context, _ DeleteCommentReq) error {
 	return blocked("DeleteComment")
 }
+
+// Worklog writes.
+func (r *readOnlyClient) AddWorklog(_ context.Context, _ AddWorklogReq) (*Worklog, error) {
+	return nil, blocked("AddWorklog")
+}
+func (r *readOnlyClient) UpdateWorklog(_ context.Context, _ UpdateWorklogReq) (*Worklog, error) {
+	return nil, blocked("UpdateWorklog")
+}
+func (r *readOnlyClient) DeleteWorklog(_ context.Context, _ DeleteWorklogReq) error {
+	return blocked("DeleteWorklog")
+}

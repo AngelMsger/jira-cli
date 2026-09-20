@@ -66,6 +66,17 @@ func TestReadOnlyBlocksEveryMutator(t *testing.T) {
 		{"DeleteComment", func() error {
 			return c.DeleteComment(ctx, DeleteCommentReq{IssueKey: "ENG-1", ID: "1"})
 		}},
+		{"AddWorklog", func() error {
+			_, err := c.AddWorklog(ctx, AddWorklogReq{IssueKey: "ENG-1", TimeSpent: "1h"})
+			return err
+		}},
+		{"UpdateWorklog", func() error {
+			_, err := c.UpdateWorklog(ctx, UpdateWorklogReq{IssueKey: "ENG-1", ID: "1", TimeSpent: "1h"})
+			return err
+		}},
+		{"DeleteWorklog", func() error {
+			return c.DeleteWorklog(ctx, DeleteWorklogReq{IssueKey: "ENG-1", ID: "1"})
+		}},
 	}
 	for _, tc := range cases {
 		tc := tc

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>jira-cli — read and write Jira from your terminal</title>
-<meta name="description" content="A command-line tool that lets coding agents drive Jira issue-tracking workflows — read and search issues via JQL, create, edit, assign and transition them, and manage comments. Jira Cloud and Data Center.">
+<meta name="description" content="A command-line tool that lets coding agents drive Jira issue-tracking workflows — read and search issues via JQL, create, edit, assign and transition them, manage comments, and log work. Jira Cloud and Data Center.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,6 +75,11 @@
         <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></div>
         <h3>Comments</h3>
         <p>Read issue comments and post, edit or delete them — deletion gated behind <code>--yes</code>.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg></div>
+        <h3>Time tracking</h3>
+        <p>Log work in Jira&#39;s own units (<code>"3h 20m"</code>), steer the remaining estimate, and reconstruct a person&#39;s week with <code>worklog search --since 7d</code>.</p>
       </div>
       <div class="card feat">
         <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
@@ -163,7 +168,7 @@ npm install -g @angelmsger/jira-cli</pre>
     <div class="section-head">
       <span class="eyebrow">Commands</span>
       <h2>The command surface</h2>
-      <p class="lead">Eight command groups. Every flag and example lives in the full CLI reference.</p>
+      <p class="lead">Nine command groups. Every flag and example lives in the full CLI reference.</p>
     </div>
     <div class="grid grid-3">
       <a class="card cmd-group" href="cli/#jira-cli-issue">
@@ -177,6 +182,10 @@ npm install -g @angelmsger/jira-cli</pre>
       <a class="card cmd-group" href="cli/#jira-cli-comment">
         <span class="cg-name">comment</span>
         <p>Read, post, edit and delete issue comments.</p>
+      </a>
+      <a class="card cmd-group" href="cli/#jira-cli-worklog">
+        <span class="cg-name">worklog</span>
+        <p>Log, correct and delete work; search a person&#39;s worklogs across issues.</p>
       </a>
       <a class="card cmd-group" href="cli/#jira-cli-user">
         <span class="cg-name">user</span>

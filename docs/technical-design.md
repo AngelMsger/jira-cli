@@ -14,16 +14,17 @@ searching, reading, and maintaining issues.
 - **Layered configuration**: CLI flags / environment variables / `.env`
   / config file, with an interactive `init` wizard.
 - **Operation surface**: reads and writes. Reads cover issue fetching,
-  JQL search, project listing, transitions discovery, comments, and user
-  resolution. Writes cover issues (create / edit / assign / transition)
-  and comments (post / edit / delete). `whoami` reports the user attached
-  to the current credentials. Every write command accepts `--dry-run` to
-  preview the request that would be sent.
+  JQL search, project listing, transitions discovery, comments, worklogs,
+  and user resolution. Writes cover issues (create / edit / assign /
+  transition), comments (post / edit / delete) and worklogs (log / edit /
+  delete, with remaining-estimate control). `whoami` reports the user
+  attached to the current credentials. Every write command accepts
+  `--dry-run` to preview the request that would be sent.
 
-Non-goals for v0.1: worklogs, watchers, issue links, attachments,
-Agile boards / sprints (the Agile REST API), issue deletion, project
-administration, and third-party OAuth 2.0 authorization (extension point
-reserved, not shipped in this cycle).
+Non-goals: watchers, issue links, attachments, Agile boards / sprints
+(the Agile REST API), issue deletion, project administration, and
+third-party OAuth 2.0 authorization (extension point reserved, not
+shipped in this cycle).
 
 ## 2. API flavor difference matrix
 
@@ -73,13 +74,20 @@ Issue      { ID, Key, ProjectKey, Type, Summary, Description, Status,
              ParentKey, Created, Updated, URL }
 Status     { ID, Name, Category }
 Comment    { ID, IssueKey, Author *User, Body, Created, Updated }
+Worklog    { ID, IssueKey, Author *User, UpdateAuthor *User, Comment,
+             Started, TimeSpent, TimeSpentSeconds, Created, Updated }
 Transition { ID, Name, To *Status }
 User       { AccountID, Username, DisplayName, Email, Active }
 ```
 
-`Issue.Description` and `Comment.Body` are plain text on both flavors
-(the ADF bridge normalizes Cloud). JSON output fields use snake_case;
-`Issue.URL` is the human `/browse/<key>` link.
+`Issue.Description`, `Comment.Body` and `Worklog.Comment` are plain text
+on both flavors (the ADF bridge normalizes Cloud). JSON output fields use
+snake_case; `Issue.URL` is the human `/browse/<key>` link.
+`Worklog.TimeSpent` is Jira's server-rendered human form ("3h 20m") and
+`TimeSpentSeconds` its machine counterpart — only the server can expand
+`w`/`d` units, because they depend on the instance's time-tracking
+configuration. `Worklog.IssueKey` is populated on every read path, so
+`worklog list` and `worklog search` emit the same object shape.
 
 Search `--field` selects server-side fields, but normalization only exposes
 the fields in `Issue`. Due dates and arbitrary custom fields are not exposed;
@@ -173,24 +181,103 @@ Global persistent flags: `--base-url`, `--flavor`,
 `--format` (json|table|ndjson), `--fields`, `--timeout`, `--config`,
 `--use-context`, `--verbose`, `--pretty`, `--allow-writes`.
 
-Commands group by resource: `issue`, `project`, `comment`, `user`,
-`config`, `auth`, `doctor`, `whoami`, `skill`, `version`. Cross-command
-conventions:
+Commands group by resource: `issue`, `project`, `comment`, `worklog`,
+`user`, `config`, `auth`, `doctor`, `whoami`, `skill`, `version`.
+Cross-command conventions:
 
 - **Identifier parsing**: issue inputs accept a bare key (`PROJ-123`), a
   `/browse/` URL, or a board URL carrying `?selectedIssue=`, parsed by
   `pkg/urlref`; project inputs accept a key or a project URL.
-- **Writes**: `issue create/edit/assign/transition` and
-  `comment add/update/delete` are the write commands. Every write accepts
-  `--dry-run` to preview the HTTP request it would send; destructive
-  commands (`comment delete`) additionally require `--yes`.
+- **Writes**: `issue create/edit/assign/transition`,
+  `comment add/update/delete` and `worklog add/update/delete` are the write
+  commands. Every write accepts `--dry-run` to preview the HTTP request it
+  would send; destructive commands (`comment delete`, `worklog delete`)
+  additionally require `--yes`.
 - **Pagination**: list commands (`issue search`, `comment list`,
-  `project list`) accept `--limit/--all/--cursor` and emit a
-  `{items, next, has_more}` envelope.
+  `worklog list`, `worklog search`, `project list`) accept
+  `--limit/--all/--cursor` and emit a `{items, next, has_more}` envelope.
 - **Name resolution**: `issue transition --to` resolves transition names
   against the live transitions list; assignee flags resolve
   display-name/email queries to Cloud accountIds. Both fail with the
   candidate list on ambiguity, never guess.
+- **Time tracking**: the `worklog` group mirrors `comment` — the issue is
+  positional on `list`/`add`, while `update`/`delete` take the worklog ID
+  positionally plus a required `--issue`, because a worklog ID is only
+  addressable together with its issue. It deviates from the CLI-wide
+  `--body`/`--body-file` pair, using `--comment`/`--comment-file`: Jira's
+  own field is `comment`, `--body` inside a worklog command would read as
+  the issue body, and the flag then matches the output field. See §5.1 for
+  the time contract and §5.2 for the cross-issue query.
+
+### 5.1 Worklog time and estimate contract
+
+Jira owns the arithmetic; the CLI owns the parsing and the footguns.
+
+- `--time-spent` takes Jira's own grammar ("3h 20m", "1d 4h") and is
+  forwarded **verbatim** as `timeSpent`. It is never converted client-side,
+  because `w`/`d` expand according to the instance's time-tracking
+  configuration. The shape is validated first, so a malformed value fails
+  as `WORKLOG_BAD_TIME_SPENT` (exit 2) before any HTTP round trip. Note
+  Go's `time.ParseDuration` rejects the space, so it is not used here.
+  `--time-spent-seconds` sends `timeSpentSeconds` instead; the two are
+  mutually exclusive.
+- `--started` is normalized into Jira's wire layout
+  `2006-01-02T15:04:05.000-0700` — millisecond precision and a colon-free
+  offset, which is *not* RFC 3339. Accepted inputs are `now`, an RFC 3339
+  instant, a local wall clock (`2006-01-02T15:04:05`) and a date
+  (`2006-01-02`, read as UTC midnight). Omitting it lets Jira default to
+  now. Output timestamps stay the raw Jira strings, as `Issue.Created` and
+  `Comment.Created` already do.
+- `--adjust-estimate` maps to Jira's `adjustEstimate`, with its companion
+  flags validated per operation:
+
+  | mode | `add` | `update` | `delete` |
+  |------|-------|----------|----------|
+  | `auto` (Jira's default) | — | — | — |
+  | `leave` | — | — | — |
+  | `new` | `--new-estimate` | `--new-estimate` | `--new-estimate` |
+  | `manual` | `--reduce-by` | rejected | `--increase-by` |
+
+  `manual` is unavailable on update because Jira's
+  `PUT .../worklog/{id}` accepts only `adjustEstimate` + `newEstimate`.
+  Illegal combinations fail as `WORKLOG_BAD_ADJUST_ESTIMATE`,
+  `WORKLOG_ESTIMATE_FLAG_MISSING` or `WORKLOG_ESTIMATE_FLAG_UNSUPPORTED`.
+
+  These land as query parameters on the path returned by the shared
+  `build*` helper, so `DescribeWrite` — which renders `baseURL + path` —
+  previews the exact query string the live request sends.
+
+### 5.2 `worklog search` — a bounded multi-resource query
+
+`worklog search` reports one user's worklogs across issues, following the
+event-filter contract in
+[`agent-facing-cli-best-practices.md`](https://github.com/AngelMsger/oa-cli/blob/main/docs/agent-facing-cli-best-practices.md)
+§3.5: `--since` is exclusive with `--from`/`--to`, `--to` requires
+`--from`, and the interval is always half-open `[from, to)` so adjacent
+windows never overlap. A window is **mandatory** (`WORKLOG_TIME_REQUIRED`),
+because the query spans resources.
+
+Candidates come from one JQL search on `worklogAuthor` / `worklogDate`.
+Jira's `worklogDate` has day granularity and is evaluated in the
+instance's timezone, so that clause deliberately over-selects; the exact
+window is then applied to each worklog's own `started` instant. `--author`
+resolves to a stable backend identity (Cloud `accountId`, DC username) —
+a display name is output, never identity evidence.
+
+`--limit`/`--cursor`/`--all` page the **candidate issue search**, not the
+worklogs, so item counts vary per page. Coverage gaps are reported rather
+than hidden: issues that cannot be read produce a `WORKLOG_SOURCE_FAILED`
+stderr notice (and a hard error only when every candidate fails), and
+worklogs whose author carries no stable identifier produce
+`WORKLOG_ACTOR_COVERAGE`.
+
+Documented limits: only issues the caller can browse are visible, Jira
+withholds worklogs with restricted visibility, and results depend on the
+*Log Work* field being visible for the project. Cloud's
+`GET /worklog/updated` + `POST /worklog/list` were rejected — they key on
+update time rather than start time, are instance-wide rather than
+author-scoped, need elevated permissions, and have no Data Center
+counterpart, which would break the single flavor-agnostic client.
 
 The full command / flag / example reference is auto-generated from the
 command tree — see [docs/cli/](cli/) (`make docs` produces it, CI
@@ -385,6 +472,9 @@ trigger-word description, `metadata.requires.bins`,
   resolution.
 - `writing-issues.md` — create / edit / assign / transition / comments,
   and the ADF plain-text contract.
+- `tracking-time.md` — worklog CRUD, the time and `--started` grammars,
+  the remaining-estimate matrix, and the bounded `worklog search` window
+  with its coverage limits.
 - `replying-to-people.md` — authorship classification, concrete per-comment
   approval with existing authorization preserved, and agent attribution.
 - `safety-modes.md` — `--dry-run` and read-only mode for agents.
@@ -418,9 +508,15 @@ informational check that does not change connectivity health.
   Coverage includes config precedence, auth resolution and file
   permissions, JQL construction, the ADF bridge (including the
   write→read round-trip), the per-flavor `DescribeWrite` plan table
-  (method / path / payload dialect for every write op), Cloud user
-  resolution, read-only blocking of every mutator, every output format
-  and `--fields`, errors mapping, and urlref.
+  (method / path / payload dialect — and estimate query string — for every
+  write op), Cloud user resolution, read-only blocking of every mutator,
+  every output format and `--fields`, errors mapping, and urlref. The
+  worklog surface adds the time-window matrix (mutual exclusion, the
+  half-open boundary), the Jira duration grammar including the space Go's
+  `ParseDuration` rejects, `--started` normalization across every accepted
+  layout, the estimate-adjustment matrix, and the `worklog search` fan-out
+  (window filter, stable-identity matching, coverage counters, per-issue
+  failure handling) against a stub client.
 - **HTTP-layer tests**: `httptest.Server` drives the client; assertions
   cover the search endpoint split (Cloud `POST /search/jql` with token
   cursor vs DC `GET /search` with startAt) and header/auth wiring.
@@ -429,6 +525,9 @@ informational check that does not change connectivity health.
   command, asserting stdout contract and exit codes. The read-only /
   dry-run safety modes are covered here as well — every blocked-write
   path is paired with its `--allow-writes` and `--dry-run` counter-test.
+  Worklog coverage includes the CRUD happy path, the estimate query string
+  in a `--dry-run` preview, the mandatory `worklog search` window, and the
+  missing-identifier errors naming `worklog list`.
   The Cloud dialect is covered by the unit layer; run a live-Cloud smoke
   before a release.
 - **Read-only live verification**: `make e2e-live` runs only

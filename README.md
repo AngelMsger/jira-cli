@@ -12,7 +12,7 @@
 `jira-cli` lets coding agents (Claude Code and others) — and humans — read,
 search and **maintain** Jira issues from the command line: fetch issues,
 run JQL searches, create/edit/assign issues, move them through workflow
-transitions, and manage comments. It speaks to both **Jira Cloud** (REST v3)
+transitions, manage comments, and log work. It speaks to both **Jira Cloud** (REST v3)
 and **Data Center / Server** (REST v2), returns agent-friendly JSON with
 structured errors, and ships a companion Skill that teaches an agent how to
 use it. Write commands support `--dry-run`, and destructive ones require `--yes`.
@@ -31,8 +31,13 @@ use it. Write commands support `--dry-run`, and destructive ones require `--yes`
   `--fields` projection so an agent spends minimal context.
 - **Read & write** — fetch issues, JQL search (raw or composed from flags);
   create, edit and assign issues; workflow transitions with name resolution;
-  read, post, edit and delete comments. Every write supports `--dry-run`;
-  destructive commands need `--yes`.
+  read, post, edit and delete comments; log, correct and delete worklogs with
+  remaining-estimate control. Every write supports `--dry-run`; destructive
+  commands need `--yes`.
+- **Time tracking** — `worklog` speaks Jira's own units (`"3h 20m"`) and
+  normalizes `--started` into the colon-free instant the API demands.
+  `worklog search --since 7d` reconstructs a person's week across issues
+  within a bounded, half-open window.
 - **Flexible configuration** — CLI flags, environment variables, a `.env` file,
   a YAML config file, or an interactive wizard; secrets stored in the OS
   keychain.
@@ -109,6 +114,8 @@ jira-cli issue search --project ENG --assignee me
 jira-cli issue get PROJ-123
 jira-cli issue transition PROJ-123 --to "In Progress"
 jira-cli comment add PROJ-123 --body "Deployed to staging."
+jira-cli worklog add PROJ-123 --time-spent "3h 20m" --comment "Traced the retry loop"
+jira-cli worklog search --since 7d
 ```
 
 ## Configuration
@@ -135,6 +142,8 @@ are never written to the config file.
 | `priority list` / `label list` | instance-wide priorities and labels (label listing is Jira Cloud only) |
 | `field list` / `field options` | generic create-screen field discovery, incl. a custom select field's allowed values per project + issue type context |
 | `comment list` / `add` / `update` / `delete` | read, post, edit and remove comments; `delete` needs `--yes` |
+| `worklog list` / `add` / `update` / `delete` | read and maintain an issue's worklogs; `--adjust-estimate` controls the remaining estimate; `delete` needs `--yes` |
+| `worklog search` | one user's worklogs across issues inside a bounded `--since` / `--from`+`--to` window |
 | `whoami` | print the user the credentials authenticate as |
 | `user resolve` / `user me` | resolve a user selector to the identifier assignee flags accept |
 | `skill install` / `skill uninstall` | deploy or remove the embedded companion Skill (Claude Code, Codex, Cursor, Agents, Gemini, GitHub Copilot, OpenCode, Continue, Windsurf, Grok Build, Pi, Kilo Code, Roo Code) |

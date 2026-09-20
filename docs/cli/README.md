@@ -121,3 +121,14 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | --- | --- |
 | [`jira-cli whoami`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-whoami) | Print the user the configured credentials authenticate as |
 
+## worklog
+
+| Command | Description |
+| --- | --- |
+| [`jira-cli worklog`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog) | Read and log work on issues (time tracking) |
+| [`jira-cli worklog add`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-add) | Log work on an issue |
+| [`jira-cli worklog delete`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-delete) | Delete one or more worklogs |
+| [`jira-cli worklog list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-list) | List an issue's worklogs (oldest first) |
+| [`jira-cli worklog search`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-search) | Find a user's worklogs across issues within a time window |
+| [`jira-cli worklog update`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-update) | Change an existing worklog |
+

@@ -22,7 +22,7 @@ func runRoot(t *testing.T, args ...string) error {
 // A pure command group must reject an unknown subcommand as a usage error
 // instead of cobra's default (print help, exit 0), which reads as false success.
 func TestGroupRejectsUnknownSubcommand(t *testing.T) {
-	for _, group := range []string{"config", "auth", "skill"} {
+	for _, group := range []string{"config", "auth", "skill", "worklog"} {
 		t.Run(group, func(t *testing.T) {
 			err := runRoot(t, group, "zzz", "extra")
 			if err == nil {

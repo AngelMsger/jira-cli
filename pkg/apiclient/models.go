@@ -104,6 +104,26 @@ type Comment struct {
 	Updated  string `json:"updated,omitempty"`
 }
 
+// Worklog is a normalized time-tracking entry on an issue. Comment is plain
+// text on both flavors: ADF on Cloud is flattened by bodyToText, exactly as
+// Comment.Body is. TimeSpent is the server-rendered human form ("3h 20m") and
+// TimeSpentSeconds its machine counterpart; both come from Jira, which alone
+// knows the instance's hours-per-day / days-per-week configuration.
+type Worklog struct {
+	ID string `json:"id"`
+	// IssueKey identifies the worklog's issue. It is populated on every read
+	// path, so `worklog list` and `worklog search` emit the same shape.
+	IssueKey         string `json:"issue_key"`
+	Author           *User  `json:"author,omitempty"`
+	UpdateAuthor     *User  `json:"update_author,omitempty"`
+	Comment          string `json:"comment,omitempty"`
+	Started          string `json:"started,omitempty"`
+	TimeSpent        string `json:"time_spent,omitempty"`
+	TimeSpentSeconds int64  `json:"time_spent_seconds"`
+	Created          string `json:"created,omitempty"`
+	Updated          string `json:"updated,omitempty"`
+}
+
 // Transition is one workflow transition available on an issue.
 type Transition struct {
 	ID string `json:"id"`
@@ -304,6 +324,56 @@ type UpdateCommentReq struct {
 type DeleteCommentReq struct {
 	IssueKey string
 	ID       string
+}
+
+// EstimateAdjust controls what a worklog write does to the issue's remaining
+// estimate. Mode is Jira's adjustEstimate: "auto" (default; subtract the logged
+// time), "new" (set NewEstimate), "leave" (untouched) or "manual" (ReduceBy on
+// add, IncreaseBy on delete). Jira's PUT .../worklog/{id} accepts only
+// adjustEstimate + newEstimate, so "manual" is rejected on update.
+type EstimateAdjust struct {
+	Mode        string
+	NewEstimate string
+	ReduceBy    string
+	IncreaseBy  string
+}
+
+// ListWorklogsOpts controls a worklog listing for one issue.
+type ListWorklogsOpts struct {
+	ListOpts
+	IssueKey string
+}
+
+// AddWorklogReq is a request to log work on an issue. Exactly one of TimeSpent
+// (Jira's own grammar, e.g. "3h 20m") and TimeSpentSeconds must be set;
+// TimeSpent is forwarded verbatim because only the server can expand w/d units.
+// Started is empty or already in Jira's wire layout (see FormatJiraInstant).
+type AddWorklogReq struct {
+	IssueKey         string
+	TimeSpent        string
+	TimeSpentSeconds int64
+	Started          string
+	Comment          string
+	Estimate         EstimateAdjust
+}
+
+// UpdateWorklogReq is a request to change an existing worklog. Empty fields are
+// left untouched; at least one must be set.
+type UpdateWorklogReq struct {
+	IssueKey         string
+	ID               string
+	TimeSpent        string
+	TimeSpentSeconds int64
+	Started          string
+	Comment          string
+	Estimate         EstimateAdjust
+}
+
+// DeleteWorklogReq is a request to delete a worklog.
+type DeleteWorklogReq struct {
+	IssueKey string
+	ID       string
+	Estimate EstimateAdjust
 }
 
 // WriteRequestPlan describes the HTTP request a write operation would send,

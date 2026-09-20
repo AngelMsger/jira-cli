@@ -24,9 +24,14 @@ jira-cli comment delete 10042 --issue ENG-123 --yes --dry-run
 # }
 ```
 
-Use `--dry-run` before any destructive command (`comment delete`) and before
-any write whose target (issue key, transition, assignee) was inferred rather
-than pasted in literally. Confirm the URL ends with the expected resource.
+Use `--dry-run` before any destructive command (`comment delete`,
+`worklog delete`) and before any write whose target (issue key, transition,
+assignee) was inferred rather than pasted in literally. Confirm the URL ends
+with the expected resource.
+
+For worklogs the preview also carries the remaining-estimate change in the
+query string — `?adjustEstimate=new&newEstimate=2d` — so check it before
+altering someone's plan.
 
 Read-only lookups needed to compute the payload — assignee resolution on
 Cloud, transition-name resolution — still run under `--dry-run`; they are

@@ -241,6 +241,55 @@ func routes() http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	mux.HandleFunc("GET /rest/api/2/issue/{key}/worklog", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]any{
+			"worklogs": []any{worklog("200", "3h 20m", 12000)},
+			"startAt":  0, "maxResults": 25, "total": 1,
+		})
+	})
+	mux.HandleFunc("POST /rest/api/2/issue/{key}/worklog", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			TimeSpent        string `json:"timeSpent"`
+			TimeSpentSeconds int64  `json:"timeSpentSeconds"`
+			Comment          string `json:"comment"`
+			Started          string `json:"started"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body.TimeSpent == "" && body.TimeSpentSeconds == 0 {
+			jiraError(w, http.StatusBadRequest, "Worklog must specify time spent.")
+			return
+		}
+		out := worklog("10099", body.TimeSpent, body.TimeSpentSeconds)
+		if body.Comment != "" {
+			out["comment"] = body.Comment
+		}
+		if body.Started != "" {
+			out["started"] = body.Started
+		}
+		w.WriteHeader(http.StatusCreated)
+		writeJSON(w, out)
+	})
+	mux.HandleFunc("PUT /rest/api/2/issue/{key}/worklog/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			TimeSpent        string `json:"timeSpent"`
+			TimeSpentSeconds int64  `json:"timeSpentSeconds"`
+			Comment          string `json:"comment"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		out := worklog(r.PathValue("id"), body.TimeSpent, body.TimeSpentSeconds)
+		if body.Comment != "" {
+			out["comment"] = body.Comment
+		}
+		writeJSON(w, out)
+	})
+	mux.HandleFunc("DELETE /rest/api/2/issue/{key}/worklog/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("id") == "404" {
+			jiraError(w, http.StatusNotFound, "Worklog does not exist.")
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	// GitHub-style latest-release endpoint for the update notifier
 	// (JIRA_RELEASE_API points here in e2e).
 	mux.HandleFunc("GET /releases/latest", func(w http.ResponseWriter, r *http.Request) {
@@ -308,6 +357,21 @@ func comment(id, body string) map[string]any {
 		"id": id, "author": user("alice", "Alice Example"), "body": body,
 		"created": "2026-01-01T00:00:00.000+0000",
 		"updated": "2026-01-01T00:00:00.000+0000",
+	}
+}
+
+// worklog mirrors Jira's worklog shape, including the colon-free `started`
+// layout the API actually emits.
+func worklog(id, timeSpent string, seconds int64) map[string]any {
+	return map[string]any{
+		"id": id, "author": user("alice", "Alice Example"),
+		"updateAuthor":     user("alice", "Alice Example"),
+		"comment":          "Investigated the retry loop.",
+		"started":          "2026-01-01T09:00:00.000+0000",
+		"timeSpent":        timeSpent,
+		"timeSpentSeconds": seconds,
+		"created":          "2026-01-01T00:00:00.000+0000",
+		"updated":          "2026-01-01T00:00:00.000+0000",
 	}
 }
 

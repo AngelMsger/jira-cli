@@ -143,7 +143,7 @@ func newRootCmdWithState() (*cobra.Command, *appState) {
 	root.AddCommand(
 		newIssueCmd(state),
 		newProjectCmd(state),
-		newCommentCmd(state),
+		newCommentCmd(state), newWorklogCmd(state),
 		newPriorityCmd(state),
 		newLabelCmd(state),
 		newFieldCmd(state),

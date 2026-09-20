@@ -79,6 +79,36 @@ successful deletions: inspect per-item results, never replay the whole batch.
 - **`UNKNOWN_COMMAND`** (usage, 2) → a typo'd subcommand; the message carries
   a "Did you mean" suggestion.
 
+### Worklogs
+
+All usage (exit 2), raised before any request leaves the CLI. See
+[tracking-time.md](tracking-time.md).
+
+- **`WORKLOG_NO_ID`** → `worklog update`/`delete` without a worklog ID.
+  `next_steps` names `worklog list <issue-key>`, the only way to discover one.
+- **`WORKLOG_NO_TIME_SPENT`** → `worklog add` without `--time-spent` or
+  `--time-spent-seconds`.
+- **`WORKLOG_BAD_TIME_SPENT`** → the duration is not Jira's grammar. Use
+  `w`/`d`/`h`/`m`, space-separated (`"3h 20m"`); a Go duration like `1h30m0s`
+  is rejected.
+- **`WORKLOG_TIME_SPENT_CONFLICT`** → `--time-spent` and
+  `--time-spent-seconds` are mutually exclusive.
+- **`WORKLOG_BAD_STARTED`** → `--started` is unparseable. Use `now`, an
+  RFC 3339 instant, a local wall clock, or a `YYYY-MM-DD` date (UTC).
+- **`WORKLOG_NO_UPDATE_FIELDS`** → `worklog update` changed nothing.
+- **`WORKLOG_BAD_ADJUST_ESTIMATE` / `WORKLOG_ESTIMATE_FLAG_MISSING` /
+  `WORKLOG_ESTIMATE_FLAG_UNSUPPORTED`** → the `--adjust-estimate` mode and its
+  companion flag disagree. `manual` is unavailable on `update`.
+- **`WORKLOG_TIME_REQUIRED`** → `worklog search` needs `--since`, or `--from`
+  with an optional `--to`; the query spans issues and must be bounded.
+- **`BAD_TIME_RANGE`** → the window is contradictory: `--since` with
+  `--from`/`--to`, `--to` without `--from`, or `--to` not after `--from`.
+
+Two worklog conditions are **stderr notices**, not errors — the command still
+succeeds, and you should pass their substance on rather than reporting a
+complete result: `WORKLOG_SOURCE_FAILED` (issues that could not be read) and
+`WORKLOG_ACTOR_COVERAGE` (entries whose author has no stable identifier).
+
 ## Recovery patterns
 
 - **`CREDENTIAL_STORE_INACCESSIBLE` / `CREDENTIAL_NOT_VISIBLE_OR_MISSING`** →

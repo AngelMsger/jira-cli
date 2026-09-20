@@ -172,6 +172,86 @@ func TestDescribeWritePlansPerFlavor(t *testing.T) {
 			wantMethod: "DELETE",
 			wantPath:   "/rest/api/{v}/issue/ENG-1/comment/7",
 		},
+		{
+			name:       "add worklog",
+			op:         AddWorklogReq{IssueKey: "ENG-1", TimeSpent: "3h 20m", Started: "2026-09-19T09:00:00.000+0800", Comment: "traced it"},
+			wantMethod: "POST",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog",
+			check: func(t *testing.T, flavor Flavor, payload []byte) {
+				var v struct {
+					Comment   json.RawMessage `json:"comment"`
+					Started   string          `json:"started"`
+					TimeSpent string          `json:"timeSpent"`
+				}
+				if err := json.Unmarshal(payload, &v); err != nil {
+					t.Fatalf("payload: %v", err)
+				}
+				if v.TimeSpent != "3h 20m" {
+					t.Errorf("timeSpent = %q, want it forwarded verbatim", v.TimeSpent)
+				}
+				if v.Started != "2026-09-19T09:00:00.000+0800" {
+					t.Errorf("started = %q", v.Started)
+				}
+				assertBodyDialect(t, flavor, v.Comment, "traced it")
+			},
+		},
+		{
+			name:       "add worklog with seconds and a new estimate",
+			op:         AddWorklogReq{IssueKey: "ENG-1", TimeSpentSeconds: 1800, Estimate: EstimateAdjust{Mode: "new", NewEstimate: "2d"}},
+			wantMethod: "POST",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog?adjustEstimate=new&newEstimate=2d",
+			check: func(t *testing.T, flavor Flavor, payload []byte) {
+				var v map[string]any
+				if err := json.Unmarshal(payload, &v); err != nil {
+					t.Fatalf("payload: %v", err)
+				}
+				if v["timeSpentSeconds"] != float64(1800) {
+					t.Errorf("payload = %s, want timeSpentSeconds 1800", payload)
+				}
+				if _, ok := v["timeSpent"]; ok {
+					t.Errorf("payload = %s, want no timeSpent alongside seconds", payload)
+				}
+			},
+		},
+		{
+			name:       "add worklog reducing the estimate manually",
+			op:         AddWorklogReq{IssueKey: "ENG-1", TimeSpent: "1h", Estimate: EstimateAdjust{Mode: "manual", ReduceBy: "30m"}},
+			wantMethod: "POST",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog?adjustEstimate=manual&reduceBy=30m",
+		},
+		{
+			name:       "update worklog",
+			op:         UpdateWorklogReq{IssueKey: "ENG-1", ID: "7", TimeSpent: "2h"},
+			wantMethod: "PUT",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog/7",
+		},
+		{
+			name:       "update worklog comment",
+			op:         UpdateWorklogReq{IssueKey: "ENG-1", ID: "7", Comment: "revised"},
+			wantMethod: "PUT",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog/7",
+			check: func(t *testing.T, flavor Flavor, payload []byte) {
+				var v struct {
+					Comment json.RawMessage `json:"comment"`
+				}
+				if err := json.Unmarshal(payload, &v); err != nil {
+					t.Fatalf("payload: %v", err)
+				}
+				assertBodyDialect(t, flavor, v.Comment, "revised")
+			},
+		},
+		{
+			name:       "delete worklog",
+			op:         DeleteWorklogReq{IssueKey: "ENG-1", ID: "7"},
+			wantMethod: "DELETE",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog/7",
+		},
+		{
+			name:       "delete worklog increasing the estimate manually",
+			op:         DeleteWorklogReq{IssueKey: "ENG-1", ID: "7", Estimate: EstimateAdjust{Mode: "manual", IncreaseBy: "1h"}},
+			wantMethod: "DELETE",
+			wantPath:   "/rest/api/{v}/issue/ENG-1/worklog/7?adjustEstimate=manual&increaseBy=1h",
+		},
 	}
 
 	for _, flavor := range []Flavor{FlavorCloud, FlavorDataCenter} {

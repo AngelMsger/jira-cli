@@ -115,6 +115,15 @@
       <div class="side-title">whoami</div>
       <a href="#jira-cli-whoami">jira-cli whoami</a>
       </div>
+    <div class="side-group">
+      <div class="side-title">worklog</div>
+      <a href="#jira-cli-worklog">jira-cli worklog</a>
+      <a href="#jira-cli-worklog-add">jira-cli worklog add</a>
+      <a href="#jira-cli-worklog-delete">jira-cli worklog delete</a>
+      <a href="#jira-cli-worklog-list">jira-cli worklog list</a>
+      <a href="#jira-cli-worklog-search">jira-cli worklog search</a>
+      <a href="#jira-cli-worklog-update">jira-cli worklog update</a>
+      </div>
 
   </aside>
   <main class="cli-main">
@@ -914,6 +923,151 @@ DC:    the selector is the username and is echoed back verbatim.</p>
 
 
       <h3>Examples</h3><pre>  jira-cli whoami</pre>
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog">
+      <h2>jira-cli worklog</h2>
+      <p class="short">Read and log work on issues (time tracking)</p>
+      <pre>jira-cli worklog</pre>
+      <p class="long">Read and log work on issues. Worklog IDs come from `worklog list`;
+`worklog search` finds a user&#39;s entries across issues within a
+bounded time window.</p>
+
+
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog-add">
+      <h2>jira-cli worklog add</h2>
+      <p class="short">Log work on an issue</p>
+      <pre>jira-cli worklog add &lt;issue-key|url&gt; --time-spent &lt;duration&gt; [flags]</pre>
+      <p class="long">Log work on an issue. --time-spent takes Jira&#39;s own units and is sent
+verbatim, because only the server knows the instance&#39;s hours-per-day and
+days-per-week settings. The comment is plain text on both flavors: on
+Cloud it becomes ADF paragraphs, on Data Center it is sent as given.
+By default Jira subtracts the logged time from the remaining estimate;
+--adjust-estimate changes that.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--adjust-estimate</code></td><td></td><td>how to adjust the remaining estimate: auto, new, leave or manual (default &#34;auto&#34;)</td></tr>
+        <tr><td><code>--comment</code></td><td></td><td>worklog comment text</td></tr>
+        <tr><td><code>--comment-file</code></td><td></td><td>read the worklog comment from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--new-estimate</code></td><td></td><td>remaining estimate to set, e.g. &#34;2d&#34;; required with --adjust-estimate new</td></tr>
+        <tr><td><code>--reduce-by</code></td><td></td><td>reduce the remaining estimate by this amount; required with --adjust-estimate manual</td></tr>
+        <tr><td><code>--started</code></td><td></td><td>when the work started: &#34;now&#34;, an RFC3339 instant, a local wall clock (&#34;2006-01-02T15:04:05&#34;) or a date (&#34;2006-01-02&#34;, UTC); defaults to now</td></tr>
+        <tr><td><code>--time-spent</code></td><td></td><td>time spent in Jira&#39;s own units, e.g. &#34;3h 20m&#34; or &#34;1d 4h&#34; (required unless --time-spent-seconds is given)</td></tr>
+        <tr><td><code>--time-spent-seconds</code></td><td><code>0</code></td><td>time spent in seconds (mutually exclusive with --time-spent)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli worklog add PROJ-123 --time-spent &#34;3h 20m&#34; --comment &#34;Traced the retry loop&#34;
+  jira-cli worklog add PROJ-123 --time-spent 45m --started 2026-09-19T09:00:00
+  jira-cli worklog add PROJ-123 --time-spent 2h --adjust-estimate new --new-estimate 1d</pre>
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog-delete">
+      <h2>jira-cli worklog delete</h2>
+      <p class="short">Delete one or more worklogs</p>
+      <pre>jira-cli worklog delete &lt;worklog-id&gt;... --issue &lt;key&gt; [flags]</pre>
+      <p class="long">Delete a worklog by ID. Pass several IDs to delete them in one run, or
+a single &#39;-&#39; to read newline-separated IDs from stdin. Deletion requires
+--yes (or an interactive confirmation when stdin is a terminal); --yes
+applies to the whole batch. By default Jira adds the deleted time back
+to the remaining estimate; --adjust-estimate changes that.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--adjust-estimate</code></td><td></td><td>how to adjust the remaining estimate: auto, new, leave or manual (default &#34;auto&#34;)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--increase-by</code></td><td></td><td>increase the remaining estimate by this amount; required with --adjust-estimate manual</td></tr>
+        <tr><td><code>--issue</code></td><td></td><td>the issue the worklogs belong to (required)</td></tr>
+        <tr><td><code>--new-estimate</code></td><td></td><td>remaining estimate to set, e.g. &#34;2d&#34;; required with --adjust-estimate new</td></tr>
+        <tr><td><code>--yes</code></td><td><code>false</code></td><td>skip the deletion confirmation</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli worklog delete 10042 --issue PROJ-123 --yes
+  jira-cli worklog delete 10042 10043 --issue PROJ-123 --yes --adjust-estimate leave</pre>
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog-list">
+      <h2>jira-cli worklog list</h2>
+      <p class="short">List an issue&#39;s worklogs (oldest first)</p>
+      <pre>jira-cli worklog list &lt;issue-key|url&gt; [flags]</pre>
+
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli worklog list PROJ-123
+  jira-cli worklog list PROJ-123 --all</pre>
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog-search">
+      <h2>jira-cli worklog search</h2>
+      <p class="short">Find a user&#39;s worklogs across issues within a time window</p>
+      <pre>jira-cli worklog search --since &lt;duration&gt; | --from &lt;instant&gt; [--to &lt;instant&gt;] [flags]</pre>
+      <p class="long">Find worklogs across issues. A bounded window is required so the query
+cannot scan every issue you can see.
+
+Candidate issues come from a JQL search on worklogAuthor/worklogDate.
+Jira&#39;s worklogDate has day granularity and is evaluated in the instance&#39;s
+timezone, so that clause deliberately over-selects; the exact [--from,
+--to) bound is then applied to each worklog&#39;s own `started` instant.
+
+--limit, --cursor and --all page the candidate issue search, not the
+worklogs, so the number of items per page varies. Only issues you can
+browse are visible, and Jira withholds worklogs whose visibility is
+restricted, so a result is not proof that nothing else exists.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--all</code></td><td><code>false</code></td><td>fetch every page of results</td></tr>
+        <tr><td><code>--author</code></td><td><code>me</code></td><td>only worklogs by this user selector; &#34;me&#34; is the authenticated user</td></tr>
+        <tr><td><code>--cursor</code></td><td></td><td>start from this pagination cursor (the &#39;next&#39; of a prior page)</td></tr>
+        <tr><td><code>--from</code></td><td></td><td>worklogs started at or after this RFC3339 instant or UTC date</td></tr>
+        <tr><td><code>--limit</code></td><td><code>0</code></td><td>page size (default from config)</td></tr>
+        <tr><td><code>--project</code></td><td></td><td>restrict the candidate issue search to this project key</td></tr>
+        <tr><td><code>--since</code></td><td></td><td>only worklogs started within this recent duration, such as 24h or 7d</td></tr>
+        <tr><td><code>--to</code></td><td></td><td>worklogs started before this RFC3339 instant or UTC date (defaults to now)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli worklog search --since 7d
+  jira-cli worklog search --project ENG --since 24h
+  jira-cli worklog search --author alice --from 2026-09-01T00:00:00+08:00 --to 2026-09-08T00:00:00+08:00</pre>
+    </section>
+
+    <section class="cmd" id="jira-cli-worklog-update">
+      <h2>jira-cli worklog update</h2>
+      <p class="short">Change an existing worklog</p>
+      <pre>jira-cli worklog update &lt;worklog-id&gt; --issue &lt;key&gt; [flags]</pre>
+      <p class="long">Change a worklog&#39;s time, start instant or comment. Unset flags are left
+as they are. Jira&#39;s worklog update endpoint has no manual estimate mode,
+so --adjust-estimate accepts auto, new and leave only.</p>
+      <h3>Options</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+        <tr><td><code>--adjust-estimate</code></td><td></td><td>how to adjust the remaining estimate: auto, new, leave or manual (default &#34;auto&#34;)</td></tr>
+        <tr><td><code>--comment</code></td><td></td><td>worklog comment text</td></tr>
+        <tr><td><code>--comment-file</code></td><td></td><td>read the worklog comment from a file (&#39;-&#39; for stdin)</td></tr>
+        <tr><td><code>--dry-run</code></td><td><code>false</code></td><td>preview the HTTP request without sending it</td></tr>
+        <tr><td><code>--issue</code></td><td></td><td>the issue the worklog belongs to (required)</td></tr>
+        <tr><td><code>--new-estimate</code></td><td></td><td>remaining estimate to set, e.g. &#34;2d&#34;; required with --adjust-estimate new</td></tr>
+        <tr><td><code>--started</code></td><td></td><td>when the work started: &#34;now&#34;, an RFC3339 instant, a local wall clock (&#34;2006-01-02T15:04:05&#34;) or a date (&#34;2006-01-02&#34;, UTC); defaults to now</td></tr>
+        <tr><td><code>--time-spent</code></td><td></td><td>time spent in Jira&#39;s own units, e.g. &#34;3h 20m&#34; or &#34;1d 4h&#34;</td></tr>
+        <tr><td><code>--time-spent-seconds</code></td><td><code>0</code></td><td>time spent in seconds (mutually exclusive with --time-spent)</td></tr>
+        </tbody>
+      </table>
+      <h3>Examples</h3><pre>  jira-cli worklog update 10042 --issue PROJ-123 --time-spent 2h
+  jira-cli worklog update 10042 --issue PROJ-123 --comment &#34;Corrected the note&#34;</pre>
     </section>
 
   </main>

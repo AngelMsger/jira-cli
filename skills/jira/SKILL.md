@@ -1,7 +1,7 @@
 ---
 name: jira
-version: 0.3.2
-description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create and edit issues, assign them, move them through workflow transitions, read/post/edit/delete comments, and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom select options). Every mutating command accepts --dry-run, and a session read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use this skill when the user gives a Jira issue key (like PROJ-123) or a Jira URL, or mentions a Jira ticket/issue; asks to find, read or summarise issues; run a JQL query; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post/edit/delete a comment; browse projects; asks which values a project or an issue field allows; check which Jira user they are; or wants a dry-run / read-only / safe-mode session. Works with Jira Cloud and Data Center / Server."
+version: 0.4.0
+description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create/edit/assign issues, move them through workflow transitions, read/post/edit/delete comments, log and correct worklogs (time tracking), and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom selects). Every mutating command accepts --dry-run, and a read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use when the user gives a Jira issue key (like PROJ-123) or URL, or mentions a Jira ticket/issue; asks to find or summarise issues; run JQL; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post a comment; log work or time spent, or ask what they logged this week; browse projects; asks which values a field allows; check which Jira user they are; or wants a dry-run / read-only session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
     bins: ["jira-cli"]
@@ -40,6 +40,15 @@ gives only a *topic* or *description*, do **not** guess a key — run
   `comment add`; to edit or delete one → `comment update` / `comment delete`
   (see [writing-issues.md](references/writing-issues.md)).
   Replies to people follow [replying-to-people.md](references/replying-to-people.md).
+- User wants to **log work / record time spent** on an issue → `worklog add`;
+  to see what is logged → `worklog list`; to correct or remove an entry →
+  `worklog update` / `worklog delete`
+  (see [tracking-time.md](references/tracking-time.md)).
+- User asks **what they (or someone) logged** over a period ("my hours this
+  week", a timesheet, a worklog report) → `worklog search --author me
+  --since 7d`. A bounded window is required, and the result is only as
+  complete as what that account can browse — say so rather than implying a
+  total (see [tracking-time.md](references/tracking-time.md)).
 - User wants to browse **projects** → `project list` / `project get`.
 - User asks **which values a field allows** (components, versions, issue
   types, statuses, priorities, labels, a custom select field), or a value you
@@ -64,6 +73,11 @@ jira-cli comment list <key>            # comments, oldest first
 jira-cli comment add <key> --body ...  # post a comment
 jira-cli comment update <id> --issue <key> --body ...
 jira-cli comment delete <id>... --issue <key> --yes
+jira-cli worklog list <key>            # worklogs on an issue, oldest first
+jira-cli worklog add <key> --time-spent "3h 20m" [--started ...] [--comment ...]
+jira-cli worklog update <id> --issue <key> --time-spent 2h
+jira-cli worklog delete <id>... --issue <key> --yes
+jira-cli worklog search --since 7d     # one user's worklogs across issues
 jira-cli project list [--query q]      # projects visible to the user
 jira-cli project get <key>
 jira-cli project components <key>      # valid components in the project
@@ -80,8 +94,9 @@ jira-cli doctor                        # config / credentials / connectivity
 jira-cli skill status|install          # this Skill's install state
 ```
 
-Every write (`issue create/edit/assign/transition`, `comment add/update/delete`)
-takes `--dry-run`; `comment delete` additionally needs `--yes`. See
+Every write (`issue create/edit/assign/transition`, `comment add/update/delete`,
+`worklog add/update/delete`) takes `--dry-run`; `comment delete` and
+`worklog delete` additionally need `--yes`. See
 [safety-modes.md](references/safety-modes.md).
 
 ## Bodies are plain text (Cloud/DC asymmetry)
@@ -131,7 +146,7 @@ limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
-- **Skill handshake — set `JIRA_CLI_SKILL=0.3.2`.** Once you have loaded
+- **Skill handshake — set `JIRA_CLI_SKILL=0.4.0`.** Once you have loaded
   this Skill, export that exact value in the environment used to run the CLI.
   The CLI compares it with the embedded Skill version and emits a structured
   stderr notice when the Skill is missing, old, or uses the legacy unversioned

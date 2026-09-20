@@ -54,6 +54,11 @@ type Client interface {
 	UpdateComment(ctx context.Context, req UpdateCommentReq) (*Comment, error)
 	DeleteComment(ctx context.Context, req DeleteCommentReq) error
 
+	ListWorklogs(ctx context.Context, opt ListWorklogsOpts) (ListResult[Worklog], error)
+	AddWorklog(ctx context.Context, req AddWorklogReq) (*Worklog, error)
+	UpdateWorklog(ctx context.Context, req UpdateWorklogReq) (*Worklog, error)
+	DeleteWorklog(ctx context.Context, req DeleteWorklogReq) error
+
 	// ResolveUser resolves a user selector (Cloud accountId, DC username, or a
 	// display-name/email query) to a unique user. It backs assignee flags.
 	ResolveUser(ctx context.Context, selector string) (*User, error)

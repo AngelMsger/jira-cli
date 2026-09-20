@@ -30,6 +30,16 @@ func (c *apiClient) commentWriteTarget(key, id string) writeTarget {
 	return target
 }
 
+func (c *apiClient) worklogWriteTarget(key, id string) writeTarget {
+	target := issueWriteTarget(c.baseURL, key)
+	target.description = "worklog on " + target.description
+	if id != "" {
+		target.description = "worklog " + id + " on " + issueWriteTarget(c.baseURL, key).description
+	}
+	target.readSteps = []string{"jira-cli worklog list " + shellArgument(key) + " --limit 25"}
+	return target
+}
+
 func createWriteTarget(req CreateIssueReq) writeTarget {
 	return writeTarget{
 		description: fmt.Sprintf("new issue %q in project %s", req.Summary, req.ProjectKey),
