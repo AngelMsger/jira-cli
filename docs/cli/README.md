@@ -131,4 +131,3 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | [`jira-cli worklog list`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-list) | List an issue's worklogs (oldest first) |
 | [`jira-cli worklog search`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-search) | Find a user's worklogs across issues within a time window |
 | [`jira-cli worklog update`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-worklog-update) | Change an existing worklog |
-
