@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-24
+### Added
+
+- Add `auth reuse` to verify and associate an existing matching login with a team
+  context without another login or copying secrets; include dry-run and explicit
+  source selection for ambiguous identities.
+
+
 ## [0.6.0] - 2026-09-20
 
 ### Added
@@ -55,7 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve credential-page metadata and replace configuration files atomically.
 - Hide secret input in terminal prompts while retaining the plain setup pipe flow.
 - Preserve the default project through configuration read/modify/write.
-
 
 ## [0.4.1] - 2026-09-16
 
@@ -110,7 +117,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each product's home and project markers; `--agent` accepts the full id
   list. Installation guides, generated CLI docs, and help text stay in sync.
 
-
 ## [0.2.1] - 2026-08-11
 
 ### Added
@@ -120,7 +126,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `./.pi/skills/<name>` with `--project`. Auto-detection probes `~/.pi` /
   `./.pi` alongside Claude Code, Codex, and Grok Build. Installation guides,
   generated CLI docs, and agent help text list the new target.
-
 
 ## [0.2.0] - 2026-08-11
 
@@ -155,7 +160,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `./.grok/skills/<name>` with `--project`. Auto-detection probes `~/.grok` /
   `./.grok` alongside Claude Code and Codex. Installation guides, generated CLI
   docs, and agent help text list the new target.
-
 
 ## [0.1.1] - 2026-07-16
 
@@ -216,7 +220,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/AngelMsger/jira-cli/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/AngelMsger/jira-cli/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/AngelMsger/jira-cli/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/AngelMsger/jira-cli/compare/v0.4.0...v0.4.1

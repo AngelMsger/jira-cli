@@ -10,6 +10,7 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
+SKILL_VERSION="$(sed -n 's/^version: *//p' "$ROOT/skills/jira/SKILL.md" | head -1)"
 BIN="$ROOT/bin/jira-cli"
 
 PASS=0
@@ -226,12 +227,12 @@ SKILL_HOME="$(mktemp -d)"
 assert_contains  "skill install for Codex" '"alignment": "current"' \
                                           env HOME="$SKILL_HOME" "${CLI[@]}" skill install --agent codex
 assert_contains  "skill status version aligned" '"loaded_status": "current"' \
-                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL=0.4.0 "${CLI[@]}" skill status
+                                          env HOME="$SKILL_HOME" JIRA_CLI_SKILL="$SKILL_VERSION" "${CLI[@]}" skill status
 assert_err_contains "legacy Skill handshake is detected" '"status":"unknown"' \
                                           env HOME="$SKILL_HOME" JIRA_CLI_SKILL=1 JIRA_CLI_NO_UPDATE_NOTIFIER=1 "${CLI[@]}" issue get ENG-404
 assert_exit      "missing issue -> 6"     6                "${CLI[@]}" issue get ENG-404
 assert_err_contains "update notice includes Skill refresh" '"next_steps"' \
-                                          env JIRA_CLI_SKILL=0.4.0 "${CLI[@]}" issue get ENG-404
+                                          env JIRA_CLI_SKILL="$SKILL_VERSION" "${CLI[@]}" issue get ENG-404
 assert_exit      "bad flag -> 2"          2                "${CLI[@]}" issue get ENG-1 --bogus
 assert_exit      "unknown subcommand -> 2" 2               "${CLI[@]}" issue frobnicate
 assert_err_contains "unknown subcommand suggests" "UNKNOWN_COMMAND" \

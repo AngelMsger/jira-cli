@@ -12,6 +12,7 @@ is published at <https://angelmsger.github.io/jira-cli/cli/>.
 | [`jira-cli auth guide`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-guide) | Show offline credential acquisition guidance for this service |
 | [`jira-cli auth login`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-login) | Verify and store personal credentials for the configured service |
 | [`jira-cli auth logout`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-logout) | Remove the stored credential for the configured server |
+| [`jira-cli auth reuse`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-reuse) | Reuse an existing login in the selected context without signing in again |
 | [`jira-cli auth status`](https://angelmsger.github.io/jira-cli/cli/#jira-cli-auth-status) | Show whether a usable credential is configured |
 
 ## comment
