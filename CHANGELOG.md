@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep the credential `config init` has just saved when an edit changes only
   the spelling of the server URL, such as a trailing slash, and keep an old
   server's credential while another context still uses it.
+- Point `auth reuse` source-selection errors, the installation guide and the
+  Skill at `config get-contexts`; they named a `config contexts` command this
+  CLI does not have.
 
 ## [0.7.0] - 2026-09-24
 ### Added

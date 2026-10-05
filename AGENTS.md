@@ -212,6 +212,10 @@ server, a scheme change and a failed write when touching `config init` or
 `config delete-context`. `internal/app` tests run against the in-memory keyring
 that `TestMain` installs; never add a test that can reach the OS keychain.
 
+Recovery steps must name commands that exist in this CLI. The context listing
+is `config get-contexts` here, not the `config contexts` some siblings use;
+resolve an advertised command against the command tree in a test.
+
 ## List output and continuation
 
 Keep the shared renderer's NDJSON stdout item-only. After successfully writing
