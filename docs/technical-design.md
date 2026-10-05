@@ -295,6 +295,15 @@ result sets). `--fields a,b.c` projects by dot-path. List commands
 emit the pagination envelope `{items, next, has_more}`; `--cursor`
 continues from a prior page's `next`.
 
+NDJSON stdout contains only the projected item rows. If `has_more` is true,
+`EmitList` sends a compact stderr notice after all rows are written:
+`{"_notice":{"pagination":{"next":"<opaque>","has_more":true},"next_steps":["Pass next as --cursor to retrieve the next page."]}}`.
+This also applies to an empty filtered page. Completed pages, including `--all`
+results, emit no pagination notice. A failed stdout write suppresses the notice;
+a failed notice write does not change success. `Options.NoticeWriter` defaults
+to stderr and `Options.NextFlag` defaults to `--cursor`, shared with the table
+footer. Field projection affects rows only; JSON envelopes remain unchanged.
+
 `--all` collects all pages before formatting, including NDJSON. `--limit` is a
 page size, not a total bound. Agents should start with scoped queries and one
 page, follow cursors as needed, and reserve `--all` for complete inventories.

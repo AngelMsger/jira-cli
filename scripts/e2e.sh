@@ -96,6 +96,11 @@ TMPCFG="$(mktemp -d)"
 CLI=("$BIN" --config "$TMPCFG")
 
 echo "==> mock e2e checks"
+if python3 "$ROOT/scripts/e2e-pagination.py" "${CLI[@]}"; then
+  pass "NDJSON projected rows, cursor continuation, completion, and --all"
+else
+  fail "NDJSON pagination contract"
+fi
 assert_contains  "version"                "jira-cli" "${CLI[@]}" version
 assert_contains  "doctor healthy"         '"healthy": true' "${CLI[@]}" doctor
 assert_contains  "doctor reports update"  '"available": true' "${CLI[@]}" doctor

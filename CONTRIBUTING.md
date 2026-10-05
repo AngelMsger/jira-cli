@@ -14,7 +14,7 @@ This repository is a Go CLI for Jira. The executable entrypoint is in `cmd/jira-
 
 - `make build` builds `bin/jira-cli` with version metadata.
 - `make test` runs `go test ./...` across all packages.
-- `make e2e` builds the CLI and runs end-to-end checks against the in-repo mock server.
+- `make e2e` builds the CLI and runs end-to-end checks against the in-repo mock server; Python 3 validates NDJSON pagination across real CLI invocations.
 - `make e2e-live` also runs read-only checks against a real server configured through `.env`.
 - `make lint` runs formatting and vetting via `make fmt` and `make vet`.
 - `make cross` creates release binaries in `dist/`.

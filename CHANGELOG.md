@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve NDJSON list continuation on stderr as `_notice.pagination` with the
+  opaque `next` cursor, `has_more`, and an actionable `--cursor` hint. Keep stdout
+  item-only, including projected and empty filtered pages; completed pages and
+  `--all` results emit no pagination notice. JSON envelopes remain unchanged.
+- Document the output contract and bump the companion Skill to `0.4.3`.
+
 ## [0.7.0] - 2026-09-24
 ### Added
 

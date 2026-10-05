@@ -203,3 +203,14 @@ verify native credentials before associating missing identity, and retain operat
 failures. Never copy secrets, infer identity from environment variables or activate
 a context. Cover dry-run, ambiguity, scope mismatch, concurrent edits and fresh-load
 credential resolution. Native self-configuration follows the existing read-only exception.
+
+## List output and continuation
+
+Keep the shared renderer's NDJSON stdout item-only. After successfully writing
+all rows, an incomplete page emits one compact `_notice.pagination` record on
+stderr with `next`, `has_more`, and a continuation hint. Preserve the notice for
+empty filtered pages and field projections; omit it on completed pages and
+stdout failures. Keep JSON envelopes unchanged. `Options.NoticeWriter` controls
+the notice destination (nil means stderr), and `Options.NextFlag` controls the
+NDJSON hint and table footer (empty means `--cursor`). Cover renderer edge cases
+and a real CLI cursor round trip in the mock end-to-end suite.

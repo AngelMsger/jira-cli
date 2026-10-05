@@ -82,7 +82,11 @@ jira-cli issue search --project ENG --all               # only for a complete in
 
 The cursor is opaque — pass it back verbatim. (Internally it is a
 `nextPageToken` on Cloud and a `startAt` offset on Data Center; never
-construct one yourself.)
+construct one yourself.) With `--format ndjson`, stdout contains only item
+rows; incomplete pages emit `next` and `has_more` in stderr's
+`_notice.pagination`, with a `--cursor` hint in `_notice.next_steps`. Follow that
+cursor even when filtering leaves the page empty. Field projection preserves
+the notice; completed pages and `--all` results emit none.
 
 Start with a project and other useful filters. `--limit` controls page size,
 not total results; `--all` collects every page before output. Follow `next`

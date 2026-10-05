@@ -153,7 +153,11 @@ are never written to the config file.
 In the default JSON output, list commands return a `{items, next, has_more}`
 envelope; pass `--cursor` with a prior page's `next` to read the following page,
 or `--all` to fetch every page. `--format ndjson` instead streams the items
-themselves, one JSON object per line.
+themselves, one JSON object per line. Incomplete pages emit a compact
+`_notice.pagination` on stderr with `next` and `has_more`; pass that `next`
+verbatim as `--cursor`. Empty filtered pages still carry the notice. Completed
+pages and `--all` results do not. `--all` collects all pages before rendering,
+including NDJSON.
 
 ### Multiple servers (contexts)
 
