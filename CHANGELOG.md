@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Skill at `config get-contexts`; they named a `config contexts` command this
   CLI does not have.
 
+### Changed
+
+- List all seven family CLIs in the README and on the landing page, and state
+  on the landing page how many coding agents `skill install` supports.
+
 ## [0.7.0] - 2026-09-24
 ### Added
 

@@ -260,11 +260,13 @@ Part of a family of agent-facing CLIs — one skeleton, one set of conventions, 
 built for coding agents. Browse the full set at
 **[github.com/AngelMsger](https://github.com/AngelMsger)**:
 
+- **jira-cli** — Jira issues & workflow transitions *(this project)*
 - **[confluence-cli](https://github.com/AngelMsger/confluence-cli)** — Confluence as a knowledge base
 - **[bitbucket-cli](https://github.com/AngelMsger/bitbucket-cli)** — Bitbucket pull requests & code review
 - **[openobserve-cli](https://github.com/AngelMsger/openobserve-cli)** — OpenObserve logs, metrics & traces
 - **[jenkins-cli](https://github.com/AngelMsger/jenkins-cli)** — inspect Jenkins jobs & builds
-- **jira-cli** — Jira issues & workflow transitions *(this project)*
+- **[prometheus-cli](https://github.com/AngelMsger/prometheus-cli)** — Prometheus queries, targets, rules & alerts
+- **[wecom-calendar-cli](https://github.com/AngelMsger/wecom-calendar-cli)** — WeCom calendars, synced locally & annotated
 
 ## License
 
