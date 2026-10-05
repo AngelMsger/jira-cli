@@ -7,13 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.8.0] - 2026-10-06
+
+### Added
 
 - Preserve NDJSON list continuation on stderr as `_notice.pagination` with the
   opaque `next` cursor, `has_more`, and an actionable `--cursor` hint. Keep stdout
   item-only, including projected and empty filtered pages; completed pages and
   `--all` results emit no pagination notice. JSON envelopes remain unchanged.
 - Document the output contract and bump the companion Skill to `0.4.3`.
+
+### Changed
+
+- List all seven family CLIs in the README and on the landing page, and state
+  on the landing page how many coding agents `skill install` supports.
+
+### Fixed
+
 - Keep a stored credential that another context still uses. `config
   delete-context` removed the secret shared by every context on the same server
   and authentication scheme, so deleting a team preset signed out the personal
@@ -25,11 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Point `auth reuse` source-selection errors, the installation guide and the
   Skill at `config get-contexts`; they named a `config contexts` command this
   CLI does not have.
-
-### Changed
-
-- List all seven family CLIs in the README and on the landing page, and state
-  on the landing page how many coding agents `skill install` supports.
 
 ## [0.7.0] - 2026-09-24
 ### Added
@@ -244,7 +249,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/AngelMsger/jira-cli/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/AngelMsger/jira-cli/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/AngelMsger/jira-cli/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/AngelMsger/jira-cli/compare/v0.4.1...v0.5.0
