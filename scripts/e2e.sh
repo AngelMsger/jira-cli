@@ -210,6 +210,11 @@ assert_err_contains "worklog search needs a window" "WORKLOG_TIME_REQUIRED" \
                                           "${CLI[@]}" worklog search
 assert_err_contains "worklog search rejects --since with --from" "BAD_TIME_RANGE" \
                                           "${CLI[@]}" worklog search --since 7d --from 2026-01-01
+assert_err_contains "worklog search rejects --since with --to" "--since cannot be combined with --from or --to" \
+                                          "${CLI[@]}" worklog search --since 7d --to 2026-01-01
+assert_err_contains "worklog search rejects --to without --from" "--to requires --from" \
+                                          "${CLI[@]}" worklog search --to 2026-01-01
+assert_exit      "ambiguous worklog window -> 2" 2        "${CLI[@]}" worklog search --to 2026-01-01
 assert_contains  "worklog search returns source context" '"issue_key"' \
                                           "${CLI[@]}" worklog search --from 2025-12-01 --to 2026-12-01
 assert_contains  "worklog search filters by window" '"time_spent": "3h 20m"' \

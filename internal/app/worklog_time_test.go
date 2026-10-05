@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -63,9 +64,15 @@ func TestResolveWorklogWindow(t *testing.T) {
 		{name: "to without from", to: "2026-09-08", wantErr: true},
 		{name: "inverted range", from: "2026-09-08", to: "2026-09-01", wantErr: true},
 		{name: "empty range", from: "2026-09-01", to: "2026-09-01", wantErr: true},
+		{name: "since with from and to", since: "7d", from: "2026-09-01", to: "2026-09-08", wantErr: true},
 		{name: "negative since", since: "-7d", wantErr: true},
+		{name: "zero since", since: "0s", wantErr: true},
+		{name: "date as since", since: "2026-09-01", wantErr: true},
 		{name: "unparseable since", since: "last week", wantErr: true},
 		{name: "unparseable from", since: "", from: "01/09/2026", wantErr: true},
+		{name: "unparseable to", from: "2026-09-01", to: "later", wantErr: true},
+		// --to defaults to now, so a lower bound in the future leaves nothing.
+		{name: "from after the default to", from: "2026-09-20", wantErr: true},
 	}
 
 	for _, tc := range cases {
@@ -96,6 +103,44 @@ func TestResolveWorklogWindow(t *testing.T) {
 			}
 			if !got.to.Equal(tc.wantTo) {
 				t.Errorf("to = %s, want %s", got.to, tc.wantTo)
+			}
+		})
+	}
+}
+
+// TestWorklogSearchWindowFlagRules pins the shared flag rules where a caller
+// meets them — the command surface, where a flag bound to the wrong variable
+// would slip past the resolver's own table. --since excludes --from and --to,
+// and --to requires --from; each is a structured usage error that names the
+// offending flags and is raised before any credential or network access.
+func TestWorklogSearchWindowFlagRules(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"since with from", []string{"--since", "7d", "--from", "2026-09-01"}, "--since cannot be combined with --from or --to"},
+		{"since with to", []string{"--since", "7d", "--to", "2026-09-08"}, "--since cannot be combined with --from or --to"},
+		{"since with from and to", []string{"--since", "7d", "--from", "2026-09-01", "--to", "2026-09-08"}, "--since cannot be combined with --from or --to"},
+		{"to without from", []string{"--to", "2026-09-08"}, "--to requires --from"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := runRoot(t, append([]string{"worklog", "search"}, tc.args...)...)
+			if err == nil {
+				t.Fatal("an ambiguous window was accepted")
+			}
+			ce := cerrors.AsCLIError(err)
+			if ce.Code != "BAD_TIME_RANGE" || ce.Category != cerrors.CategoryUsage {
+				t.Fatalf("error = %s/%s, want usage/BAD_TIME_RANGE", ce.Category, ce.Code)
+			}
+			if got := cerrors.ExitCode(err); got != cerrors.ExitUsage {
+				t.Errorf("exit code = %d, want %d", got, cerrors.ExitUsage)
+			}
+			if ce.Message != tc.want {
+				t.Errorf("message = %q, want %q", ce.Message, tc.want)
+			}
+			if !strings.Contains(ce.Hint, "--from is inclusive and --to is exclusive") {
+				t.Errorf("hint = %q, want the window contract", ce.Hint)
 			}
 		})
 	}
