@@ -213,4 +213,5 @@ empty filtered pages and field projections; omit it on completed pages and
 stdout failures. Keep JSON envelopes unchanged. `Options.NoticeWriter` controls
 the notice destination (nil means stderr), and `Options.NextFlag` controls the
 NDJSON hint and table footer (empty means `--cursor`). Cover renderer edge cases
-and a real CLI cursor round trip in the mock end-to-end suite.
+and a real CLI cursor round trip in the mock end-to-end suite, including a page
+that client-side filtering leaves empty (`worklog search`).
