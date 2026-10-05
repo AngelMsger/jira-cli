@@ -373,3 +373,8 @@ in remote read-only mode; `--dry-run` never changes settings or credentials.
 Equivalent service URL overrides preserve the persisted native credential lookup
 key without redirecting requests or copying secrets. Logout removes that same
 entry. A different complete deployment URL cannot use the retained lookup key.
+
+Contexts on the same server and authentication scheme therefore share one
+stored secret. `config delete-context` and a `config init` edit remove a secret
+only when no remaining context still resolves it, and only after the config
+file has been written; re-spelling a server URL keeps its credential.

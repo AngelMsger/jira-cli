@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   item-only, including projected and empty filtered pages; completed pages and
   `--all` results emit no pagination notice. JSON envelopes remain unchanged.
 - Document the output contract and bump the companion Skill to `0.4.3`.
+- Keep a stored credential that another context still uses. `config
+  delete-context` removed the secret shared by every context on the same server
+  and authentication scheme, so deleting a team preset signed out the personal
+  context beside it. The secret is now removed only when no remaining context
+  resolves it, and only after the config file is written.
+- Keep the credential `config init` has just saved when an edit changes only
+  the spelling of the server URL, such as a trailing slash, and keep an old
+  server's credential while another context still uses it.
 
 ## [0.7.0] - 2026-09-24
 ### Added

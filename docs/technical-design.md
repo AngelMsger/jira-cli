@@ -160,6 +160,16 @@ and dir 0700 on macOS/Linux) — `~/.angelmsger/jira/credentials`. Runtime
 secrets supplied via env / `.env` / flag are used transiently and not
 persisted.
 
+The account key carries the host and scheme only, so every context on one
+server and scheme shares a secret — the basis on which `auth reuse` associates
+an identity without copying it. Cleanup follows from that: `config
+delete-context` and the `config init` orphan pass call `forgetUnusedCredential`,
+which compares `credentialKey` (host plus the scheme a fresh process would
+resolve from the file) across the contexts that remain and deletes a secret
+only when none still resolves it. Both run after the config file is written, so
+a failed write never costs a credential a context still names, and an edit that
+only re-spells the URL keeps the secret it has just saved.
+
 Credential reads distinguish "not found" from "store inaccessible". When a
 sandbox cannot inspect the host keychain/file, resolution returns
 `CREDENTIAL_STORE_INACCESSIBLE`; an ambiguous absence returns

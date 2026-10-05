@@ -204,6 +204,14 @@ failures. Never copy secrets, infer identity from environment variables or activ
 a context. Cover dry-run, ambiguity, scope mismatch, concurrent edits and fresh-load
 credential resolution. Native self-configuration follows the existing read-only exception.
 
+Contexts on one host and scheme share a stored secret, so never delete one by
+context alone. Route every cleanup through `forgetUnusedCredential`, which keeps
+a secret while any remaining context resolves the same `credentialKey`, and run
+it only after the config file is written. Cover a URL re-spelling, a shared
+server, a scheme change and a failed write when touching `config init` or
+`config delete-context`. `internal/app` tests run against the in-memory keyring
+that `TestMain` installs; never add a test that can reach the OS keychain.
+
 ## List output and continuation
 
 Keep the shared renderer's NDJSON stdout item-only. After successfully writing

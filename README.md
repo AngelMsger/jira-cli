@@ -147,7 +147,7 @@ are never written to the config file.
 | `whoami` | print the user the credentials authenticate as |
 | `user resolve` / `user me` | resolve a user selector to the identifier assignee flags accept |
 | `skill install` / `skill uninstall` | deploy or remove the embedded companion Skill (Claude Code, Codex, Cursor, Agents, Gemini, GitHub Copilot, OpenCode, Continue, Windsurf, Grok Build, Pi, Kilo Code, Roo Code) |
-| `config get-contexts` / `use-context` / `delete-context` | manage multiple named servers |
+| `config get-contexts` / `use-context` / `delete-context` | manage multiple named servers; deleting a context keeps a credential another context still uses |
 | `config` / `auth` / `doctor` / `version` | setup and diagnostics |
 
 In the default JSON output, list commands return a `{items, next, has_more}`

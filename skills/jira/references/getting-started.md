@@ -95,6 +95,11 @@ jira-cli --use-context staging issue search --project ENG   # one-off
 
 For preset team services, use `config set-context` and `auth guide` before personal login; see [team setup](team-setup.md).
 
+Contexts on the same server and authentication scheme share one stored
+credential. `config delete-context <name>` removes that credential only when no
+remaining context still uses it, so deleting a team preset does not sign out
+the personal context beside it. Delete a context only when the user asks.
+
 ## Reuse existing authentication
 
 `jira-cli --use-context team auth reuse --dry-run` previews association from
