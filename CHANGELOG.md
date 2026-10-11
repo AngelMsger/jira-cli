@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   154`. The credential store now checks for a default keychain first, once per
   store, and uses its protected file fallback when none exists. Ported from
   `openobserve-cli`.
+- Name `config get-contexts` in the `auth reuse --from-context` help. It still
+  pointed at a `config contexts` command this CLI does not have, after 0.8.0
+  fixed the errors, the guide and the Skill.
 
 ## [0.8.0] - 2026-10-06
 
