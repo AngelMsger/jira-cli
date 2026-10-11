@@ -89,53 +89,27 @@ func TestSetupTargetsNamedContextAndExcludesPersonalEnvironment(t *testing.T) {
 	}
 }
 
-// TestSetupKeepsLongPATName pins a quirk setup loads have always had: of the
-// personal fields, only JIRA_PERSONAL_ACCESS_TOKEN survives, and it selects
-// the pat scheme from its own layer unless that layer names a scheme.
-func TestSetupKeepsLongPATName(t *testing.T) {
+// TestSetupIgnoresSecrets pins that a setup load reads no secret from .env or
+// the environment, so a token never picks the scheme a team preset writes.
+func TestSetupIgnoresSecrets(t *testing.T) {
 	cleanSetupEnv(t)
 	dir := t.TempDir()
 	if err := WriteFile(dir, File{Contexts: []NamedContext{{Name: "team", BaseURL: "https://jira.example.test", Auth: AuthConfig{Scheme: SchemeBasic}}}}); err != nil {
 		t.Fatal(err)
 	}
 	dotenv := filepath.Join(dir, "presets.env")
-	load := func(env string, flags FlagValues) *Resolved {
-		t.Helper()
-		if err := os.WriteFile(dotenv, []byte(env), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		r, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv, Context: "team", Setup: true, Flags: flags})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return r
-	}
-	t.Setenv("JIRA_TOKEN", "short")
-	t.Setenv("JIRA_PASSWORD", "pw")
-	r := load("", FlagValues{})
-	if r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "file" || r.Secrets != (Secrets{}) {
-		t.Fatalf("other secrets are ignored: %+v %v", r, r.Sources)
-	}
-	r = load("JIRA_PERSONAL_ACCESS_TOKEN=dot\n", FlagValues{})
-	if r.Config.Auth.Scheme != SchemePAT || r.Sources[fieldAuthScheme] != "dotenv" || r.Secrets != (Secrets{PAT: "dot"}) {
-		t.Fatalf(".env PAT = %+v %v", r, r.Sources)
-	}
-	r = load("JIRA_PERSONAL_ACCESS_TOKEN=dot\nJIRA_AUTH_SCHEME=basic\n", FlagValues{})
-	if r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "dotenv" || r.Secrets.PAT != "dot" {
-		t.Fatalf("a scheme in the same layer wins: %+v %v", r, r.Sources)
+	if err := os.WriteFile(dotenv, []byte("JIRA_PERSONAL_ACCESS_TOKEN=dot\nJIRA_TOKEN=dot\n"), 0o600); err != nil {
+		t.Fatal(err)
 	}
 	t.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "env")
-	r = load("JIRA_AUTH_SCHEME=basic\n", FlagValues{})
-	if r.Config.Auth.Scheme != SchemePAT || r.Sources[fieldAuthScheme] != "env" || r.Secrets.PAT != "env" {
-		t.Fatalf("an environment PAT beats a .env scheme: %+v %v", r, r.Sources)
+	t.Setenv("JIRA_TOKEN", "short")
+	t.Setenv("JIRA_PASSWORD", "pw")
+	r, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv, Context: "team", Setup: true})
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Setenv("JIRA_AUTH_SCHEME", SchemeBasic)
-	if r = load("JIRA_PERSONAL_ACCESS_TOKEN=dot\n", FlagValues{}); r.Config.Auth.Scheme != SchemeBasic || r.Secrets.PAT != "env" {
-		t.Fatalf("an environment scheme wins: %+v", r)
-	}
-	t.Setenv("JIRA_AUTH_SCHEME", "")
-	if r = load("", FlagValues{AuthScheme: SchemeBasic}); r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "flag" {
-		t.Fatalf("a flag wins: %+v", r)
+	if r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "file" || r.Secrets != (Secrets{}) {
+		t.Fatalf("setup read a secret: %+v %v", r, r.Sources)
 	}
 }
 

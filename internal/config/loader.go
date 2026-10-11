@@ -1,10 +1,7 @@
 package config
 
 import (
-	"os"
-
 	kit "github.com/angelmsger/agent-cli-kit/config"
-	"github.com/joho/godotenv"
 )
 
 // FlagValues carries the global CLI flags that override configuration. Empty
@@ -63,11 +60,6 @@ func Load(opt LoadOptions) (*Resolved, error) {
 	if err != nil {
 		return nil, err
 	}
-	if opt.Setup {
-		if err := setupPAT(r, opt.DotenvPath); err != nil {
-			return nil, err
-		}
-	}
 	out := &Resolved{
 		Sources:       r.Sources,
 		ActiveContext: r.ActiveContext,
@@ -82,40 +74,6 @@ func Load(opt LoadOptions) (*Resolved, error) {
 
 // envPAT is the long name of the PAT variable; JIRA_TOKEN is its shorthand.
 const envPAT = "JIRA_PERSONAL_ACCESS_TOKEN"
-
-// setupPAT keeps how setup loads have always treated envPAT. A setup load
-// keeps only service fields, but the tiebreak that lets envPAT win over
-// JIRA_TOKEN ran after that filter, so envPAT in .env or the environment still
-// supplies the PAT and, unless the same layer sets JIRA_AUTH_SCHEME, selects
-// the pat scheme from that layer. JIRA_TOKEN and the other secrets stay
-// ignored. `config set-context` and the `config init` prefill see that scheme.
-func setupPAT(r *kit.Resolved, dotenvPath string) error {
-	if dotenvPath == "" {
-		dotenvPath = ".env"
-	}
-	dotenv := map[string]string{}
-	if _, err := os.Stat(dotenvPath); err == nil {
-		if dotenv, err = godotenv.Read(dotenvPath); err != nil {
-			return err
-		}
-	}
-	env := map[string]string{envPAT: os.Getenv(envPAT), "JIRA_AUTH_SCHEME": os.Getenv("JIRA_AUTH_SCHEME")}
-	rank := map[string]int{"dotenv": 1, "env": 2, "flag": 3}
-	for _, layer := range []struct {
-		name string
-		vars map[string]string
-	}{{"dotenv", dotenv}, {"env", env}} {
-		pat := layer.vars[envPAT]
-		if pat == "" {
-			continue
-		}
-		r.Values[fieldPAT], r.Sources[fieldPAT] = pat, layer.name
-		if layer.vars["JIRA_AUTH_SCHEME"] == "" && rank[r.Sources[fieldAuthScheme]] < rank[layer.name] {
-			r.Values[fieldAuthScheme], r.Sources[fieldAuthScheme] = SchemePAT, layer.name
-		}
-	}
-	return nil
-}
 
 // StoredContext resolves only persisted context data and built-in defaults.
 // Credential reuse must not inherit another context's environment or .env identity.

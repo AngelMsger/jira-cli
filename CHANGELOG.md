@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `config set-context` and `config init` no longer read
+  `JIRA_PERSONAL_ACCESS_TOKEN` from the environment or `.env`, as documented
+  for every other secret. Before, that one variable switched the planned scheme
+  to `pat`: on a Cloud site `set-context` failed with `AUTH_CLOUD_NEEDS_BASIC`
+  and the `config init` prefill offered `pat`, and on an existing basic context
+  `set-context` reported a `CONFIG_CONTEXT_CONFLICT`.
 - Never raise the macOS "Reset To Defaults" keychain dialog. When the user's
   HOME had no default keychain (common in agent sandboxes), saving a credential
   made macOS offer to reset the default keychain, then failed with `exit status

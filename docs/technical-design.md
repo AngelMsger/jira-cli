@@ -590,9 +590,6 @@ offline service-field validation and the pure `PlanServiceContext` merge used by
 execution and dry-run.
 `LoadOptions.Setup` selects the requested destination even when it is new and
 filters personal environment fields before credential-based scheme inference.
-One exception predates the shared engine and is kept: `JIRA_PERSONAL_ACCESS_TOKEN`
-in the environment or `.env` survives a setup load and selects the `pat` scheme
-from its layer (`setupPAT` in `internal/config/loader.go`).
 Ordinary runtime precedence and transient environment secrets remain supported.
 `AuthConfig.CredentialURL` is additive, non-secret, and serialized through every
 config shape.
