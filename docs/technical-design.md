@@ -26,6 +26,13 @@ Non-goals: watchers, issue links, attachments, Agile boards / sprints
 third-party OAuth 2.0 authorization (extension point reserved, not
 shipped in this cycle).
 
+Shared code: output rendering, argv correction, the release check, the
+credential store, and the code behind `pkg/errors` and `pkg/transport` come
+from [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by
+every CLI in the family. jira-cli supplies its own hints, User-Agent, keychain
+service name and release repository; `pkg/errors` and `pkg/transport` stay as
+re-exports so the library surface keeps its exported names.
+
 ## 2. API flavor difference matrix
 
 The CLI uses a `Flavor` value to distinguish two backends:
@@ -153,11 +160,13 @@ client build with `AUTH_CLOUD_NEEDS_BASIC` instead of surfacing a
 confusing 403.
 
 Secrets are never persisted to `config.yaml`. `config init` stores them
-in the OS keychain (`go-keyring`, service `jira-cli`, account
-`<host>:<scheme>`); on failure it falls back to a `credentials` file
-inside the resolved config directory (per-user DPAPI on Windows; file 0600
-and dir 0700 on macOS/Linux) — `~/.angelmsger/jira/credentials`. Runtime
-secrets supplied via env / `.env` / flag are used transiently and not
+through agent-cli-kit's `credstore` in the OS keychain (`go-keyring`, service
+`jira-cli`, account `<host>:<scheme>`); on failure it falls back to a
+`credentials` file inside the resolved config directory (per-user DPAPI on
+Windows; file 0600 and dir 0700 on macOS/Linux) —
+`~/.angelmsger/jira/credentials`. On macOS the store first checks for a default
+keychain, so a sandbox without one never raises the "Reset To Defaults" dialog.
+Runtime secrets supplied via env / `.env` / flag are used transiently and not
 persisted.
 
 The account key carries the host and scheme only, so every context on one
@@ -299,9 +308,9 @@ implementation.
 
 ### 6.1 Output
 
-Three `Formatter` implementations: `json` (default, agent-oriented,
-stdout), `table` (human-readable), and `ndjson` (item-per-line encoding for large
-result sets). `--fields a,b.c` projects by dot-path. List commands
+Rendering is agent-cli-kit's `output` package. Three `Formatter`
+implementations: `json` (default, agent-oriented, stdout), `table`
+(human-readable), and `ndjson` (item-per-line encoding for large result sets). `--fields a,b.c` projects by dot-path. List commands
 emit the pagination envelope `{items, next, has_more}`; `--cursor`
 continues from a prior page's `next`.
 
@@ -409,8 +418,10 @@ existing retry behavior, including Cloud's read-only POST search endpoint.
 | 4 | auth | 10 | parse |
 | 5 | permission | 11 | conflict |
 
-`hints.go` maps each category to `next_steps`, guiding agents to
-self-correct.
+The category → exit-code mapping lives in agent-cli-kit's `errors`, which
+`pkg/errors` re-exports. `pkg/errors/hints.go` maps each category to
+`next_steps`, guiding agents to self-correct; it is installed with
+`SetGuidance` when the package loads, so every error carries jira-cli's steps.
 
 ## 7. The ADF body bridge
 
@@ -529,8 +540,10 @@ informational check that does not change connectivity health.
   write→read round-trip), the per-flavor `DescribeWrite` plan table
   (method / path / payload dialect — and estimate query string — for every
   write op), Cloud user resolution, read-only blocking of every mutator,
-  every output format and `--fields`, errors mapping, and urlref. The
-  worklog surface adds the time-window matrix (mutual exclusion, the
+  that errors carry jira-cli's hints, the transport's User-Agent default,
+  and urlref. Output formats, `--fields`, the exit-code mapping, retries
+  and the credential store are tested in agent-cli-kit. The worklog
+  surface adds the time-window matrix (mutual exclusion, the
   half-open boundary), the Jira duration grammar including the space Go's
   `ParseDuration` rejects, `--started` normalization across every accepted
   layout, the estimate-adjustment matrix, and the `worklog search` fan-out

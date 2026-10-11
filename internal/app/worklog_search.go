@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/angelmsger/jira-cli/internal/output"
+	"github.com/angelmsger/agent-cli-kit/output"
 	"github.com/angelmsger/jira-cli/pkg/apiclient"
 	cerrors "github.com/angelmsger/jira-cli/pkg/errors"
 	"github.com/spf13/cobra"
