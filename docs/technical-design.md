@@ -27,11 +27,13 @@ third-party OAuth 2.0 authorization (extension point reserved, not
 shipped in this cycle).
 
 Shared code: output rendering, argv correction, the release check, the
-credential store, and the code behind `pkg/errors` and `pkg/transport` come
-from [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by
-every CLI in the family. jira-cli supplies its own hints, User-Agent, keychain
-service name and release repository; `pkg/errors` and `pkg/transport` stay as
-re-exports so the library surface keeps its exported names.
+credential store, credential resolution, and the code behind `pkg/errors` and
+`pkg/transport` come from
+[agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by every
+CLI in the family. jira-cli supplies its own hints, User-Agent, keychain
+service name, auth schemes and release repository; `pkg/errors` and
+`pkg/transport` stay as re-exports so the library surface keeps its exported
+names.
 
 ## 2. API flavor difference matrix
 
@@ -153,7 +155,14 @@ holds.
 
 - **pat**: `Authorization: Bearer <token>`. Data Center 8.14+ only.
 - **basic**: `Authorization: Basic base64(user:secret)`. Data Center uses
-  username + password; Cloud uses email + API token.
+  username + password; Cloud uses email + API token. A supplied password wins
+  over a supplied API token.
+
+`internal/auth` registers the two schemes (`pat` is the default) with
+agent-cli-kit's `auth` package, which owns the credential model, the header
+encoding and the recovery errors. `Resolve` produces a validated `Credential`
+from config + secrets, loading the secret from the keychain when not supplied
+via flags/env.
 
 Cloud rejects Bearer PATs, so `flavor=cloud` + `scheme=pat` fails fast at
 client build with `AUTH_CLOUD_NEEDS_BASIC` instead of surfacing a
@@ -541,14 +550,14 @@ informational check that does not change connectivity health.
   (method / path / payload dialect — and estimate query string — for every
   write op), Cloud user resolution, read-only blocking of every mutator,
   that errors carry jira-cli's hints, the transport's User-Agent default,
-  and urlref. Output formats, `--fields`, the exit-code mapping, retries
-  and the credential store are tested in agent-cli-kit. The worklog
-  surface adds the time-window matrix (mutual exclusion, the
-  half-open boundary), the Jira duration grammar including the space Go's
-  `ParseDuration` rejects, `--started` normalization across every accepted
-  layout, the estimate-adjustment matrix, and the `worklog search` fan-out
-  (window filter, stable-identity matching, coverage counters, per-issue
-  failure handling) against a stub client.
+  and urlref. Output formats, `--fields`, the exit-code mapping, retries,
+  the credential store and auth header encoding are tested in
+  agent-cli-kit. The worklog surface adds the time-window matrix (mutual
+  exclusion, the half-open boundary), the Jira duration grammar including
+  the space Go's `ParseDuration` rejects, `--started` normalization across
+  every accepted layout, the estimate-adjustment matrix, and the
+  `worklog search` fan-out (window filter, stable-identity matching,
+  coverage counters, per-issue failure handling) against a stub client.
 - **HTTP-layer tests**: `httptest.Server` drives the client; assertions
   cover the search endpoint split (Cloud `POST /search/jql` with token
   cursor vs DC `GET /search` with startAt) and header/auth wiring.
