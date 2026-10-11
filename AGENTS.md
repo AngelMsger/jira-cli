@@ -31,6 +31,12 @@ up front.
 - Keep commits scoped to one logical change; follow the commit and PR
   conventions in `CONTRIBUTING.md`.
 - Never commit `.env`, credentials, tokens, or build artifacts.
+- Output rendering, argv correction, the update check, the credential store,
+  and the code behind `pkg/errors` and `pkg/transport` come from
+  [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by every
+  CLI in the family. Fix bugs in those there, not here. `pkg/errors` and
+  `pkg/transport` stay as re-exports with the same exported names; jira-cli's
+  hints live in `pkg/errors/hints.go`.
 
 ## Cloud / Data Center parity — touch both branches, always
 
@@ -218,6 +224,7 @@ resolve an advertised command against the command tree in a test.
 
 ## List output and continuation
 
+The renderer is agent-cli-kit's `output` package; change its behavior there.
 Keep the shared renderer's NDJSON stdout item-only. After successfully writing
 all rows, an incomplete page emits one compact `_notice.pagination` record on
 stderr with `next`, `has_more`, and a continuation hint. Preserve the notice for
@@ -225,5 +232,5 @@ empty filtered pages and field projections; omit it on completed pages and
 stdout failures. Keep JSON envelopes unchanged. `Options.NoticeWriter` controls
 the notice destination (nil means stderr), and `Options.NextFlag` controls the
 NDJSON hint and table footer (empty means `--cursor`). Cover renderer edge cases
-and a real CLI cursor round trip in the mock end-to-end suite, including a page
-that client-side filtering leaves empty (`worklog search`).
+in the kit, and a real CLI cursor round trip in the mock end-to-end suite,
+including a page that client-side filtering leaves empty (`worklog search`).

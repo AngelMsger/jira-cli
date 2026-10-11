@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/angelmsger/jira-cli/internal/cliflags"
-	"github.com/angelmsger/jira-cli/internal/output"
+	"github.com/angelmsger/agent-cli-kit/cliflags"
+	"github.com/angelmsger/agent-cli-kit/output"
 	"github.com/angelmsger/jira-cli/pkg/constants"
 	cerrors "github.com/angelmsger/jira-cli/pkg/errors"
 	"github.com/spf13/cobra"
