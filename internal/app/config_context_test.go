@@ -122,6 +122,29 @@ func TestCmdUseContextUnknownPreservesStructuredError(t *testing.T) {
 	}
 }
 
+// Every UNKNOWN_CONTEXT, from the global flag or a context subcommand, names
+// the listing command, and that command exists.
+func TestUnknownContextNextStepResolves(t *testing.T) {
+	for _, args := range [][]string{
+		{"--use-context", "ghost", "config", "show"},
+		{"config", "use-context", "ghost"},
+		{"config", "delete-context", "ghost"},
+	} {
+		dir := t.TempDir()
+		writeContextFile(t, dir, "https://alpha.example.com", "https://beta.example.com")
+		_, err := runCLIFile(t, dir, args...)
+		ce := cerrors.AsCLIError(err)
+		if ce == nil || ce.Code != "UNKNOWN_CONTEXT" || ce.Hint != "Available contexts: alpha, beta." ||
+			len(ce.NextSteps) != 1 || ce.NextSteps[0] != "jira-cli config get-contexts" {
+			t.Fatalf("%v: %+v", args, ce)
+		}
+		cmd, rest, findErr := NewRootCmd().Find(strings.Fields(ce.NextSteps[0])[1:])
+		if findErr != nil || len(rest) != 0 || !cmd.Runnable() {
+			t.Errorf("%v: %q does not resolve to a command", args, ce.NextSteps[0])
+		}
+	}
+}
+
 // Case-only mismatch should now succeed via case-insensitive lookup — the
 // previous "Did you mean X?" UX is unnecessary when the lookup just works.
 // The output must show the *canonical* server, not whatever URL might have

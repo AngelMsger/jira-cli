@@ -27,11 +27,11 @@ third-party OAuth 2.0 authorization (extension point reserved, not
 shipped in this cycle).
 
 Shared code: output rendering, argv correction, the release check, the
-credential store, credential resolution, and the code behind `pkg/errors` and
-`pkg/transport` come from
+credential store, credential resolution, the configuration engine, and the code
+behind `pkg/errors` and `pkg/transport` come from
 [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by every
 CLI in the family. jira-cli supplies its own hints, User-Agent, keychain
-service name, auth schemes and release repository; `pkg/errors` and
+service name, auth schemes, settings table and release repository; `pkg/errors` and
 `pkg/transport` stay as re-exports so the library surface keeps its exported
 names.
 
@@ -150,6 +150,15 @@ Environment variable mapping:
 `.env` is read via `godotenv` into a temporary map without mutating the
 process environment, so the rule "environment variables outrank `.env`"
 holds.
+
+`internal/config` registers the settings (keys, `JIRA_*` variables, defaults),
+the file location, the command wording and the Cloud rules with
+agent-cli-kit's `config` package, which owns the layering, context selection,
+the atomic file write and set-context planning. The Cloud rules are: an unset
+scheme is `basic` on Cloud, a cached `detected_flavor` is dropped when the
+server or flavor changes, and setup rejects an unknown flavor and a PAT on
+Cloud. jira-cli keeps the YAML shape structs that define the file format,
+including the legacy flat layout, which reads as one context named `default`.
 
 ### 4.3 Authentication
 
@@ -576,10 +585,14 @@ informational check that does not change connectivity health.
 
 ## Team service setup and login persistence
 
-`internal/config/setup.go` owns offline service-field validation, acquisition
-links and the pure `PlanServiceContext` merge used by execution and dry-run.
+`internal/config/setup.go` owns the acquisition links and wraps the shared
+offline service-field validation and the pure `PlanServiceContext` merge used by
+execution and dry-run.
 `LoadOptions.Setup` selects the requested destination even when it is new and
 filters personal environment fields before credential-based scheme inference.
+One exception predates the shared engine and is kept: `JIRA_PERSONAL_ACCESS_TOKEN`
+in the environment or `.env` survives a setup load and selects the `pat` scheme
+from its layer (`setupPAT` in `internal/config/loader.go`).
 Ordinary runtime precedence and transient environment secrets remain supported.
 `AuthConfig.CredentialURL` is additive, non-secret, and serialized through every
 config shape.

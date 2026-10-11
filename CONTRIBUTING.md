@@ -8,10 +8,11 @@ For deeper background see [`docs/`](docs/) — start with
 
 ## Project Structure & Module Organization
 
-This repository is a Go CLI for Jira. The executable entrypoint is in `cmd/jira-cli/`. Core implementation is split between `internal/` (CLI-only: `app` for Cobra commands, `config` for setup, `auth` for jira-cli's auth schemes on top of the shared resolver) and `pkg/`, which holds the importable client library (`apiclient` for Jira APIs, `transport` for the shared HTTP client with jira-cli's User-Agent, `errors` for the shared structured error model plus jira-cli's hints) alongside other public helpers. Tests sit beside the code as `*_test.go`; the mock Jira server is in `test/mockserver/`. Documentation is in `docs/`, companion agent skill files are in `skills/jira/`, and npm wrapper/release assets are in `build/npm/`.
+This repository is a Go CLI for Jira. The executable entrypoint is in `cmd/jira-cli/`. Core implementation is split between `internal/` (CLI-only: `app` for Cobra commands, `config` for jira-cli's settings, config-file shape and setup wizard on the shared configuration engine, `auth` for jira-cli's auth schemes on top of the shared resolver) and `pkg/`, which holds the importable client library (`apiclient` for Jira APIs, `transport` for the shared HTTP client with jira-cli's User-Agent, `errors` for the shared structured error model plus jira-cli's hints) alongside other public helpers. Tests sit beside the code as `*_test.go`; the mock Jira server is in `test/mockserver/`. Documentation is in `docs/`, companion agent skill files are in `skills/jira/`, and npm wrapper/release assets are in `build/npm/`.
 
 Output rendering, argv normalization, the release check, the credential store,
-credential resolution, and the code behind `pkg/errors` and `pkg/transport` come from
+credential resolution, the configuration engine, and the code behind `pkg/errors`
+and `pkg/transport` come from
 [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), which every CLI in
 the family shares. A fix to one of those belongs there; this repo then bumps the
 version in `go.mod`.

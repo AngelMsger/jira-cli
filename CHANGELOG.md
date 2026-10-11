@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Layered configuration, context selection, the config file write and
+  `config set-context` planning now come from agent-cli-kit's `config`
+  package. Commands, output, hints and the `config.yaml` format are unchanged
+  with one exception: `UNKNOWN_CONTEXT` (from `--use-context`, `JIRA_CONTEXT`,
+  the saved `current_context`, `config use-context` or `config delete-context`)
+  now names `jira-cli config get-contexts` as its next step, in place of the
+  generic `config init` and `config show --explain`.
 - Credential validation, header encoding, keychain lookup and the credential
   recovery errors now come from agent-cli-kit's `auth` package. Messages, error
   codes and stored credentials are unchanged.
