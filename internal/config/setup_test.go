@@ -11,12 +11,16 @@ import (
 	cerrors "github.com/angelmsger/jira-cli/pkg/errors"
 )
 
+// envNames lists every variable the schema binds, plus the context selector.
+var envNames = []string{"JIRA_SERVER", "JIRA_FLAVOR", "JIRA_CREDENTIAL_URL", "JIRA_AUTH_SCHEME", "JIRA_USERNAME",
+	"JIRA_DEFAULT_PROJECT", "JIRA_FORMAT", "JIRA_CLI_READ_ONLY", "JIRA_PERSONAL_ACCESS_TOKEN", "JIRA_TOKEN",
+	"JIRA_PASSWORD", "JIRA_API_TOKEN", "JIRA_CONTEXT"}
+
 func cleanSetupEnv(t *testing.T) {
 	t.Helper()
-	for key := range envBindings {
+	for _, key := range envNames {
 		t.Setenv(key, "")
 	}
-	t.Setenv("JIRA_CONTEXT", "")
 }
 func setupFixture() NamedContext {
 	return NamedContext{Name: "team", BaseURL: "https://service.example.test/deploy", Auth: AuthConfig{Scheme: "pat", Username: "PersonalUser", CredentialURL: "https://help.example.test/tokens"}, Flavor: "datacenter"}
@@ -82,6 +86,30 @@ func TestSetupTargetsNamedContextAndExcludesPersonalEnvironment(t *testing.T) {
 	}
 	if got.Config.BaseURL != "" || got.Config.Auth.Username != "" {
 		t.Fatalf("new target inherited active context: %+v", got)
+	}
+}
+
+// TestSetupIgnoresSecrets pins that a setup load reads no secret from .env or
+// the environment, so a token never picks the scheme a team preset writes.
+func TestSetupIgnoresSecrets(t *testing.T) {
+	cleanSetupEnv(t)
+	dir := t.TempDir()
+	if err := WriteFile(dir, File{Contexts: []NamedContext{{Name: "team", BaseURL: "https://jira.example.test", Auth: AuthConfig{Scheme: SchemeBasic}}}}); err != nil {
+		t.Fatal(err)
+	}
+	dotenv := filepath.Join(dir, "presets.env")
+	if err := os.WriteFile(dotenv, []byte("JIRA_PERSONAL_ACCESS_TOKEN=dot\nJIRA_TOKEN=dot\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "env")
+	t.Setenv("JIRA_TOKEN", "short")
+	t.Setenv("JIRA_PASSWORD", "pw")
+	r, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv, Context: "team", Setup: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "file" || r.Secrets != (Secrets{}) {
+		t.Fatalf("setup read a secret: %+v %v", r, r.Sources)
 	}
 }
 

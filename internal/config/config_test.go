@@ -3,8 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
+	"reflect"
 	"testing"
 	"time"
 
@@ -19,406 +18,257 @@ func writeFile(t *testing.T, path, content string) {
 }
 
 func TestLoadDefaults(t *testing.T) {
+	cleanSetupEnv(t)
 	dir := t.TempDir()
 	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Config.Flavor != FlavorAuto {
-		t.Errorf("Flavor = %q, want auto", got.Config.Flavor)
-	}
-	if got.Config.Defaults.Format != "json" {
-		t.Errorf("Format = %q, want json", got.Config.Defaults.Format)
-	}
-	if got.Config.Defaults.PageSize != 25 {
-		t.Errorf("PageSize = %d, want 25", got.Config.Defaults.PageSize)
+	want := Config{Flavor: FlavorAuto, Auth: AuthConfig{Scheme: SchemePAT},
+		Defaults: Defaults{Format: "json", PageSize: 25, Timeout: 30 * time.Second, MaxRetries: 3}}
+	if !reflect.DeepEqual(got.Config, want) || got.Sources[fieldAuthScheme] != "default" {
+		t.Errorf("defaults = %+v (%v)", got.Config, got.Sources)
 	}
 }
 
-func TestLoadFileLayer(t *testing.T) {
+// TestSchema pins jira-cli's environment variables and scheme inference.
+func TestSchema(t *testing.T) {
+	cleanSetupEnv(t)
 	dir := t.TempDir()
-	writeFile(t, ConfigFilePath(dir), "server: https://file.example.com\nflavor: datacenter\n")
-	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
-	if err != nil {
-		t.Fatal(err)
+	load := func() *Resolved {
+		t.Helper()
+		r, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
 	}
-	if got.Config.BaseURL != "https://file.example.com" {
-		t.Errorf("BaseURL = %q", got.Config.BaseURL)
+	t.Setenv("JIRA_SERVER", "https://jira.example.com")
+	t.Setenv("JIRA_FLAVOR", FlavorDataCenter)
+	t.Setenv("JIRA_USERNAME", "alice")
+	t.Setenv("JIRA_CREDENTIAL_URL", "https://help.example.com/token")
+	t.Setenv("JIRA_FORMAT", "table")
+	t.Setenv("JIRA_DEFAULT_PROJECT", "ENG")
+	t.Setenv("JIRA_CLI_READ_ONLY", "yes")
+	t.Setenv("JIRA_API_TOKEN", "api")
+	r := load()
+	if r.Config.BaseURL != "https://jira.example.com" || r.Config.Flavor != FlavorDataCenter || r.Config.Auth.Username != "alice" ||
+		r.Config.Auth.CredentialURL != "https://help.example.com/token" || r.Config.Defaults.Format != "table" ||
+		r.Config.Defaults.Project != "ENG" || !r.Config.Defaults.ReadOnly ||
+		r.Config.Auth.Scheme != SchemeBasic || r.Secrets != (Secrets{APIToken: "api"}) {
+		t.Fatalf("environment = %+v %+v", r.Config, r.Secrets)
 	}
-	if got.Sources[fieldServer] != "file" {
-		t.Errorf("server source = %q, want file", got.Sources[fieldServer])
+	t.Setenv("JIRA_PASSWORD", "pw")
+	if r = load(); r.Config.Auth.Scheme != SchemeBasic || r.Secrets.Password != "pw" {
+		t.Errorf("a password selects basic: %+v", r)
+	}
+	t.Setenv("JIRA_TOKEN", "short")
+	if r = load(); r.Config.Auth.Scheme != SchemePAT || r.Secrets.PAT != "short" {
+		t.Errorf("a PAT wins over a password: %q %q", r.Config.Auth.Scheme, r.Secrets.PAT)
+	}
+	t.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "long")
+	if r = load(); r.Secrets.PAT != "long" {
+		t.Errorf("JIRA_PERSONAL_ACCESS_TOKEN wins over JIRA_TOKEN: %q", r.Secrets.PAT)
+	}
+	t.Setenv("JIRA_AUTH_SCHEME", SchemeBasic)
+	if r = load(); r.Config.Auth.Scheme != SchemeBasic {
+		t.Errorf("an explicit scheme wins: %q", r.Config.Auth.Scheme)
 	}
 }
 
-func TestLoadPrecedenceEnvOverridesDotenvAndFile(t *testing.T) {
+// TestCloudRules pins the hooks jira-cli registers: an unset scheme is basic
+// on Cloud, a cached flavor is dropped for another server, and setup rejects a
+// bad flavor and a PAT on Cloud.
+func TestCloudRules(t *testing.T) {
+	cleanSetupEnv(t)
 	dir := t.TempDir()
-	writeFile(t, ConfigFilePath(dir), "server: https://file.example.com\n")
-	dotenv := filepath.Join(dir, ".env")
-	writeFile(t, dotenv, "JIRA_SERVER=https://dotenv.example.com\n")
-	t.Setenv("JIRA_SERVER", "https://env.example.com")
+	writeFile(t, ConfigFilePath(dir), `contexts:
+  - name: cloud
+    server: https://acme.atlassian.net
+  - name: cached
+    server: https://Jira.Example.com:443/
+    detected_flavor: cloud
+current_context: cloud
+`)
+	load := func(opt LoadOptions) *Resolved {
+		t.Helper()
+		opt.ConfigDir, opt.DotenvPath = dir, filepath.Join(dir, "absent.env")
+		r, err := Load(opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	if r := load(LoadOptions{}); r.Config.Auth.Scheme != SchemeBasic || r.Sources[fieldAuthScheme] != "default" {
+		t.Errorf("Cloud default scheme = %q (%s)", r.Config.Auth.Scheme, r.Sources[fieldAuthScheme])
+	}
+	if r := load(LoadOptions{Flags: FlagValues{AuthScheme: SchemePAT}}); r.Config.Auth.Scheme != SchemePAT {
+		t.Errorf("an explicit scheme stays: %q", r.Config.Auth.Scheme)
+	}
+	r := load(LoadOptions{Context: "cached", Flags: FlagValues{BaseURL: "https://jira.example.com"}})
+	if r.Config.DetectedFlavor != FlavorCloud || r.Config.Auth.Scheme != SchemeBasic ||
+		r.Config.CredentialBaseURL != "https://Jira.Example.com:443/" {
+		t.Errorf("an equivalent spelling keeps the cache and the stored key: %+v", r.Config)
+	}
+	r = load(LoadOptions{Context: "cached", Flags: FlagValues{BaseURL: "https://other.example.com"}})
+	if r.Config.DetectedFlavor != "" || r.Config.Auth.Scheme != SchemePAT || r.Config.CredentialBaseURL != "" {
+		t.Errorf("another server drops the cache: %+v", r.Config)
+	}
+	if got := StoredContext(NamedContext{Name: "x", BaseURL: "https://acme.atlassian.net"}, Defaults{}); got.Auth.Scheme != SchemeBasic {
+		t.Errorf("stored Cloud context scheme = %q", got.Auth.Scheme)
+	}
 
-	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv})
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range []struct {
+		cfg  Config
+		code string
+	}{
+		{Config{BaseURL: "https://jira.example.com", Flavor: "server", Auth: AuthConfig{Scheme: SchemePAT}}, "BAD_FLAVOR"},
+		{Config{BaseURL: "https://acme.atlassian.net", Auth: AuthConfig{Scheme: SchemePAT}}, "AUTH_CLOUD_NEEDS_BASIC"},
+		{Config{BaseURL: "https://jira.example.com", Flavor: FlavorCloud, Auth: AuthConfig{Scheme: SchemePAT}}, "AUTH_CLOUD_NEEDS_BASIC"},
+		{Config{BaseURL: "https://jira.example.com", Auth: AuthConfig{Scheme: "bearer"}}, "AUTH_BAD_SCHEME"},
+		{Config{BaseURL: "https://jira.example.com", Flavor: FlavorDataCenter, Auth: AuthConfig{Scheme: SchemePAT}}, ""},
+	} {
+		err := ValidateService(tc.cfg)
+		if code := cerrors.AsCLIError(err); (code == nil) != (tc.code == "") || (code != nil && code.Code != tc.code) {
+			t.Errorf("ValidateService(%+v) = %v, want %q", tc.cfg, err, tc.code)
+		}
 	}
-	if got.Config.BaseURL != "https://env.example.com" {
-		t.Errorf("BaseURL = %q, want env value", got.Config.BaseURL)
-	}
-	if got.Sources[fieldServer] != "env" {
-		t.Errorf("source = %q, want env", got.Sources[fieldServer])
+	if ce := cerrors.AsCLIError(ValidateService(Config{BaseURL: "https://jira.example.com"})); ce.Hint != "Use one of: pat, basic." {
+		t.Errorf("scheme hint = %q", ce.Hint)
 	}
 }
 
-func TestLoadFlagWinsOverEverything(t *testing.T) {
-	dir := t.TempDir()
-	dotenv := filepath.Join(dir, ".env")
-	writeFile(t, dotenv, "JIRA_SERVER=https://dotenv.example.com\n")
-	t.Setenv("JIRA_SERVER", "https://env.example.com")
-
-	got, err := Load(LoadOptions{
-		ConfigDir:  dir,
-		DotenvPath: dotenv,
-		Flags:      FlagValues{BaseURL: "https://flag.example.com"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Config.BaseURL != "https://flag.example.com" {
-		t.Errorf("BaseURL = %q, want flag value", got.Config.BaseURL)
-	}
-	if got.Sources[fieldServer] != "flag" {
-		t.Errorf("source = %q, want flag", got.Sources[fieldServer])
-	}
-}
-
-func TestLoadDotenvOverridesFileButNotEnv(t *testing.T) {
-	dir := t.TempDir()
-	writeFile(t, ConfigFilePath(dir), "server: https://file.example.com\n")
-	dotenv := filepath.Join(dir, ".env")
-	writeFile(t, dotenv, "JIRA_SERVER=https://dotenv.example.com\n")
-
-	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Config.BaseURL != "https://dotenv.example.com" {
-		t.Errorf("BaseURL = %q, want dotenv value", got.Config.BaseURL)
-	}
-}
-
-func TestLoadSecretFromEnvInfersScheme(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "tok-123")
-	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Secrets.PAT != "tok-123" {
-		t.Errorf("PAT = %q", got.Secrets.PAT)
-	}
-	if got.Config.Auth.Scheme != SchemePAT {
-		t.Errorf("scheme = %q, want pat", got.Config.Auth.Scheme)
-	}
-}
-
-func TestDotenvDoesNotMutateProcessEnv(t *testing.T) {
-	dir := t.TempDir()
-	dotenv := filepath.Join(dir, ".env")
-	writeFile(t, dotenv, "JIRA_FORMAT=table\n")
-	if _, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: dotenv}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := os.LookupEnv("JIRA_FORMAT"); ok {
-		t.Error(".env load must not set process environment variables")
-	}
-}
-
-func TestWriteFileRoundTrip(t *testing.T) {
-	dir := t.TempDir()
+// TestFileFormat pins the bytes of config.yaml. The engine is shared; the
+// shape is jira-cli's (project first under defaults), and existing files must
+// keep reading and writing the same way.
+func TestFileFormat(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
 	in := File{
 		CurrentContext: "prod",
 		Contexts: []NamedContext{
-			{Name: "default", BaseURL: "https://dc.example.com", Flavor: FlavorDataCenter,
-				Auth: AuthConfig{Scheme: SchemePAT}},
-			{Name: "prod", BaseURL: "https://cloud.example.com", Flavor: FlavorCloud,
-				DetectedFlavor: FlavorCloud, Auth: AuthConfig{Scheme: SchemeBasic, Username: "alice"}},
+			{Name: "default", BaseURL: "https://dc.example.com", Flavor: FlavorDataCenter, Auth: AuthConfig{Scheme: SchemePAT}},
+			{Name: "prod", BaseURL: "https://acme.atlassian.net", Flavor: FlavorAuto, DetectedFlavor: FlavorCloud,
+				Auth: AuthConfig{Scheme: SchemeBasic, Username: "alice@acme.com", CredentialURL: "https://help.example.com/t"}},
 		},
-		Defaults: Defaults{Format: "table", PageSize: 50, Timeout: 15 * time.Second, MaxRetries: 5},
+		Defaults: Defaults{Format: "table", PageSize: 50, Timeout: 90 * time.Second, MaxRetries: 5, Project: "ENG", ReadOnly: true},
 	}
 	if err := WriteFile(dir, in); err != nil {
 		t.Fatal(err)
 	}
-	got, exists, err := ReadFile(dir)
-	if err != nil || !exists {
-		t.Fatalf("ReadFile: exists=%v err=%v", exists, err)
-	}
-	if got.CurrentContext != "prod" || len(got.Contexts) != 2 {
-		t.Fatalf("round trip mismatch: %+v", got)
-	}
-	prod, ok := got.Context("prod")
-	if !ok || prod.BaseURL != "https://cloud.example.com" || prod.Auth.Username != "alice" {
-		t.Errorf("prod context = %+v", prod)
-	}
-	if got.Defaults.Timeout != 15*time.Second || got.Defaults.PageSize != 50 {
-		t.Errorf("defaults = %+v", got.Defaults)
-	}
-}
-
-func TestWriteFilePermissions(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "nested")
-	if err := WriteFile(dir, File{Contexts: []NamedContext{{Name: "default", BaseURL: "https://x"}}}); err != nil {
-		t.Fatal(err)
-	}
-	info, err := os.Stat(ConfigFilePath(dir))
+	raw, err := os.ReadFile(ConfigFilePath(dir))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if perm := info.Mode().Perm(); runtime.GOOS != "windows" && perm != 0o600 {
-		t.Errorf("config file perm = %o, want 600", perm)
+	const want = `current_context: prod
+contexts:
+    - name: default
+      server: https://dc.example.com
+      flavor: datacenter
+      auth:
+        scheme: pat
+    - name: prod
+      server: https://acme.atlassian.net
+      flavor: auto
+      detected_flavor: cloud
+      auth:
+        credential_url: https://help.example.com/t
+        scheme: basic
+        username: alice@acme.com
+defaults:
+    project: ENG
+    format: table
+    page_size: 50
+    timeout: 1m30s
+    max_retries: 5
+    read_only: true
+`
+	if string(raw) != want {
+		t.Errorf("config.yaml changed:\n%s", raw)
+	}
+	got, ok, err := ReadFile(dir)
+	if err != nil || !ok || !reflect.DeepEqual(got, in) {
+		t.Errorf("read back %+v, %v, %v", got, ok, err)
 	}
 }
 
-func TestReadFileLegacyFlatFormat(t *testing.T) {
+// TestLegacyFlatFile pins the pre-context format: root fields become one
+// context named "default", and the next write uses the context format.
+func TestLegacyFlatFile(t *testing.T) {
+	cleanSetupEnv(t)
 	dir := t.TempDir()
 	writeFile(t, ConfigFilePath(dir),
-		"server: https://legacy.example.com\nflavor: datacenter\nauth:\n  scheme: pat\n")
+		"server: https://legacy.example.com\nflavor: datacenter\ndetected_flavor: datacenter\nauth:\n  scheme: basic\n  username: bob\ndefaults:\n  page_size: 10\n")
 	got, exists, err := ReadFile(dir)
 	if err != nil || !exists {
 		t.Fatalf("ReadFile: exists=%v err=%v", exists, err)
 	}
-	if len(got.Contexts) != 1 || got.Contexts[0].Name != DefaultContextName {
-		t.Fatalf("legacy file should yield one default context: %+v", got.Contexts)
+	want := File{CurrentContext: DefaultContextName, Defaults: Defaults{PageSize: 10}, Contexts: []NamedContext{{
+		Name: DefaultContextName, BaseURL: "https://legacy.example.com", Flavor: FlavorDataCenter,
+		DetectedFlavor: FlavorDataCenter, Auth: AuthConfig{Scheme: SchemeBasic, Username: "bob"}}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("legacy file = %+v", got)
 	}
-	if got.CurrentContext != DefaultContextName {
-		t.Errorf("CurrentContext = %q, want default", got.CurrentContext)
-	}
-	if got.Contexts[0].BaseURL != "https://legacy.example.com" {
-		t.Errorf("BaseURL = %q", got.Contexts[0].BaseURL)
-	}
-}
-
-func TestLoadLegacyFlatUnchanged(t *testing.T) {
-	dir := t.TempDir()
-	writeFile(t, ConfigFilePath(dir), "server: https://file.example.com\nflavor: datacenter\n")
-	got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
+	r, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Config.BaseURL != "https://file.example.com" || got.Config.Flavor != FlavorDataCenter {
-		t.Errorf("legacy load mismatch: %+v", got.Config)
+	if r.Config.BaseURL != "https://legacy.example.com" || r.Sources[fieldServer] != "file" ||
+		r.ActiveContext != DefaultContextName || r.ContextSource != ContextSourceCurrent {
+		t.Errorf("legacy load = %+v", r)
 	}
-	if got.Sources[fieldServer] != "file" {
-		t.Errorf("server source = %q, want file", got.Sources[fieldServer])
+	if err := WriteFile(dir, got); err != nil {
+		t.Fatal(err)
 	}
-	if got.ActiveContext != DefaultContextName {
-		t.Errorf("ActiveContext = %q, want default", got.ActiveContext)
-	}
-}
-
-func writeMultiContextFile(t *testing.T, dir string) {
-	t.Helper()
-	writeFile(t, ConfigFilePath(dir), `current_context: alpha
+	raw, _ := os.ReadFile(ConfigFilePath(dir))
+	const rewritten = `current_context: default
 contexts:
-  - name: alpha
-    server: https://alpha.example.com
-    flavor: datacenter
-    auth: {scheme: pat}
-  - name: beta
-    server: https://beta.example.com
-    flavor: cloud
-    auth: {scheme: basic, username: bob}
+    - name: default
+      server: https://legacy.example.com
+      flavor: datacenter
+      detected_flavor: datacenter
+      auth:
+        scheme: basic
+        username: bob
 defaults:
-  format: json
-`)
+    page_size: 10
+`
+	if string(raw) != rewritten {
+		t.Errorf("rewritten legacy file:\n%s", raw)
+	}
+	writeFile(t, ConfigFilePath(dir), "flavor: cloud\nauth:\n  scheme: basic\n")
+	if got, _, _ := ReadFile(dir); len(got.Contexts) != 0 || got.CurrentContext != "" {
+		t.Errorf("a flat file without a server has no context: %+v", got)
+	}
 }
 
-func TestLoadMultiContextSelection(t *testing.T) {
-	absent := func(dir string) string { return filepath.Join(dir, "absent.env") }
-
-	t.Run("current_context", func(t *testing.T) {
-		dir := t.TempDir()
-		writeMultiContextFile(t, dir)
-		got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: absent(dir)})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.ActiveContext != "alpha" || got.Config.BaseURL != "https://alpha.example.com" {
-			t.Errorf("active=%q url=%q", got.ActiveContext, got.Config.BaseURL)
-		}
-		if len(got.ContextNames) != 2 {
-			t.Errorf("ContextNames = %v", got.ContextNames)
-		}
-	})
-
-	t.Run("flag overrides current_context", func(t *testing.T) {
-		dir := t.TempDir()
-		writeMultiContextFile(t, dir)
-		got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: absent(dir), Context: "beta"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.ActiveContext != "beta" || got.Config.BaseURL != "https://beta.example.com" {
-			t.Errorf("active=%q url=%q", got.ActiveContext, got.Config.BaseURL)
-		}
-	})
-
-	t.Run("env overrides current_context", func(t *testing.T) {
-		dir := t.TempDir()
-		writeMultiContextFile(t, dir)
-		t.Setenv("JIRA_CONTEXT", "beta")
-		got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: absent(dir)})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.ActiveContext != "beta" {
-			t.Errorf("active = %q, want beta", got.ActiveContext)
-		}
-	})
-
-	t.Run("JIRA_SERVER still overrides selected context", func(t *testing.T) {
-		dir := t.TempDir()
-		writeMultiContextFile(t, dir)
-		t.Setenv("JIRA_SERVER", "https://override.example.com")
-		got, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: absent(dir)})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Config.BaseURL != "https://override.example.com" {
-			t.Errorf("BaseURL = %q, want env override", got.Config.BaseURL)
-		}
-	})
-
-	t.Run("unknown context errors", func(t *testing.T) {
-		dir := t.TempDir()
-		writeMultiContextFile(t, dir)
-		if _, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: absent(dir), Context: "ghost"}); err == nil {
-			t.Error("expected error for unknown context")
-		}
-	})
-}
-
-func TestSelectContext(t *testing.T) {
-	f := File{
-		CurrentContext: "alpha",
-		Contexts:       []NamedContext{{Name: "alpha"}, {Name: "beta"}},
+// TestUnknownContextNamesTheListing pins the wording of UNKNOWN_CONTEXT.
+func TestUnknownContextNamesTheListing(t *testing.T) {
+	cleanSetupEnv(t)
+	dir := t.TempDir()
+	writeFile(t, ConfigFilePath(dir), "contexts:\n  - name: alpha\n  - name: beta\n")
+	_, err := Load(LoadOptions{ConfigDir: dir, DotenvPath: filepath.Join(dir, "absent.env"), Context: "ghost"})
+	ce := cerrors.AsCLIError(err)
+	if ce == nil || ce.Code != "UNKNOWN_CONTEXT" || ce.Message != `context "ghost" (from --use-context) is not defined in the config file` ||
+		ce.Hint != "Available contexts: alpha, beta." || !reflect.DeepEqual(ce.NextSteps, []string{"jira-cli config get-contexts"}) {
+		t.Fatalf("UNKNOWN_CONTEXT = %+v", ce)
 	}
-	cases := []struct {
-		name, flag, env, want, wantSource string
-		wantErr                           bool
-	}{
-		{name: "flag wins", flag: "beta", want: "beta", wantSource: ContextSourceFlag},
-		{name: "env over current", env: "beta", want: "beta", wantSource: ContextSourceEnv},
-		{name: "current_context", want: "alpha", wantSource: ContextSourceCurrent},
-		{name: "unknown flag errors", flag: "ghost", wantErr: true},
+	if hint := UnknownContextHint("ghost", nil); hint != "Run `jira-cli config get-contexts` to list defined contexts." {
+		t.Errorf("empty hint = %q", hint)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, source, err := selectContext(f, tc.flag, tc.env)
-			if tc.wantErr {
-				if err == nil {
-					t.Fatal("expected error")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
-			}
-			if source != tc.wantSource {
-				t.Errorf("source = %q, want %q", source, tc.wantSource)
-			}
-		})
-	}
-
-	t.Run("sole context", func(t *testing.T) {
-		got, source, err := selectContext(File{Contexts: []NamedContext{{Name: "only"}}}, "", "")
-		if err != nil || got != "only" || source != ContextSourceSingle {
-			t.Errorf("got %q source %q err %v", got, source, err)
-		}
-	})
-	t.Run("default-named context", func(t *testing.T) {
-		got, source, err := selectContext(File{Contexts: []NamedContext{{Name: "a"}, {Name: "default"}}}, "", "")
-		if err != nil || got != "default" || source != ContextSourceDefault {
-			t.Errorf("got %q source %q err %v", got, source, err)
-		}
-	})
-	t.Run("ambiguous yields empty no error", func(t *testing.T) {
-		got, source, err := selectContext(File{Contexts: []NamedContext{{Name: "a"}, {Name: "b"}}}, "", "")
-		if err != nil || got != "" || source != ContextSourceNone {
-			t.Errorf("got %q source %q err %v, want empty/none/no-error", got, source, err)
-		}
-	})
-	t.Run("no file yields empty", func(t *testing.T) {
-		got, source, err := selectContext(File{}, "", "")
-		if err != nil || got != "" || source != ContextSourceNone {
-			t.Errorf("got %q source %q err %v", got, source, err)
-		}
-	})
-
-	// UNKNOWN_CONTEXT must surface a structured CLIError (not a generic load
-	// failure) — the surrounding app layer is supposed to pass it through
-	// untouched so the caller sees the code/hint.
-	t.Run("unknown returns UNKNOWN_CONTEXT cli error", func(t *testing.T) {
-		_, _, err := selectContext(f, "ghost", "")
-		ce, ok := err.(*cerrors.CLIError)
-		if !ok || ce.Code != "UNKNOWN_CONTEXT" {
-			t.Fatalf("got %T %v, want *CLIError UNKNOWN_CONTEXT", err, err)
-		}
-		if ce.Hint == "" {
-			t.Error("hint should be set")
-		}
-	})
-
-	// Case-insensitive lookup: `--use-context cloud` against a legacy
-	// `Cloud` config must succeed and return the canonical name. The
-	// `current_context` we persist must agree with what is in the contexts
-	// list, otherwise CI lookup against the rewritten file would orphan it.
-	t.Run("case-insensitive lookup returns canonical name", func(t *testing.T) {
-		ff := File{Contexts: []NamedContext{{Name: "Cloud"}, {Name: "default"}}}
-		got, _, err := selectContext(ff, "cloud", "")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if got != "Cloud" {
-			t.Errorf("got %q, want canonical %q", got, "Cloud")
-		}
-	})
-
-	// Without a CI match, the hint should list available names so the user
-	// does not have to run a second command to recover.
-	t.Run("hint lists available contexts", func(t *testing.T) {
-		ff := File{Contexts: []NamedContext{{Name: "alpha"}, {Name: "beta"}}}
-		_, _, err := selectContext(ff, "gamma", "")
-		ce := err.(*cerrors.CLIError)
-		if !strings.Contains(ce.Hint, "alpha") || !strings.Contains(ce.Hint, "beta") {
-			t.Errorf("hint = %q, want both context names listed", ce.Hint)
-		}
-	})
 }
 
 // TestResolveConfigDir covers the default config-dir resolution used when
 // --config was not supplied. It overrides $HOME with a temp directory so the
 // real user's config is never touched.
 func TestResolveConfigDir(t *testing.T) {
-	withFakeHome := func(t *testing.T) string {
-		t.Helper()
-		home := t.TempDir()
-		t.Setenv("HOME", home)
-		t.Setenv("USERPROFILE", home)
-		return home
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	dir, err := ResolveConfigDir()
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	t.Run("resolves to ~/.angelmsger/jira", func(t *testing.T) {
-		home := withFakeHome(t)
-		dir, err := ResolveConfigDir()
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := filepath.Join(home, ".angelmsger", "jira")
-		if dir != want {
-			t.Errorf("dir = %q, want %q", dir, want)
-		}
-	})
+	if want := filepath.Join(home, ".angelmsger", "jira"); dir != want {
+		t.Errorf("dir = %q, want %q", dir, want)
+	}
 }

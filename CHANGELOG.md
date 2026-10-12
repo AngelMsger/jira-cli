@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Layered configuration, context selection, the config file write and
+  `config set-context` planning now come from agent-cli-kit's `config`
+  package. Commands, output, hints and the `config.yaml` format are unchanged
+  with one exception: `UNKNOWN_CONTEXT` (from `--use-context`, `JIRA_CONTEXT`,
+  the saved `current_context`, `config use-context` or `config delete-context`)
+  now names `jira-cli config get-contexts` as its next step, in place of the
+  generic `config init` and `config show --explain`.
+- Credential validation, header encoding, keychain lookup and the credential
+  recovery errors now come from agent-cli-kit's `auth` package. Messages, error
+  codes and stored credentials are unchanged.
 - Output rendering, argv correction, the release check, the credential store,
   and the code behind `pkg/errors` and `pkg/transport` now come from the shared
   [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit) module. Commands,
@@ -17,12 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `config set-context` and `config init` no longer read
+  `JIRA_PERSONAL_ACCESS_TOKEN` from the environment or `.env`, as documented
+  for every other secret. Before, that one variable switched the planned scheme
+  to `pat`: on a Cloud site `set-context` failed with `AUTH_CLOUD_NEEDS_BASIC`
+  and the `config init` prefill offered `pat`, and on an existing basic context
+  `set-context` reported a `CONFIG_CONTEXT_CONFLICT`.
 - Never raise the macOS "Reset To Defaults" keychain dialog. When the user's
   HOME had no default keychain (common in agent sandboxes), saving a credential
   made macOS offer to reset the default keychain, then failed with `exit status
   154`. The credential store now checks for a default keychain first, once per
   store, and uses its protected file fallback when none exists. Ported from
   `openobserve-cli`.
+- Name `config get-contexts` in the `auth reuse --from-context` help. It still
+  pointed at a `config contexts` command this CLI does not have, after 0.8.0
+  fixed the errors, the guide and the Skill.
 
 ## [0.8.0] - 2026-10-06
 

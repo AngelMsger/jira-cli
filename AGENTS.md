@@ -32,11 +32,16 @@ up front.
   conventions in `CONTRIBUTING.md`.
 - Never commit `.env`, credentials, tokens, or build artifacts.
 - Output rendering, argv correction, the update check, the credential store,
-  and the code behind `pkg/errors` and `pkg/transport` come from
+  credential resolution, the configuration engine, and the code behind
+  `pkg/errors` and `pkg/transport` come from
   [agent-cli-kit](https://github.com/AngelMsger/agent-cli-kit), shared by every
   CLI in the family. Fix bugs in those there, not here. `pkg/errors` and
   `pkg/transport` stay as re-exports with the same exported names; jira-cli's
-  hints live in `pkg/errors/hints.go`.
+  hints live in `pkg/errors/hints.go`. `internal/auth` declares jira-cli's auth
+  schemes and recovery wording and maps config onto the shared resolver.
+  `internal/config` registers jira-cli's settings, file location, command
+  wording and Cloud rules with the shared engine (`schema.go`) and keeps the
+  YAML shape of `config.yaml` (`file.go`).
 
 ## Cloud / Data Center parity — touch both branches, always
 
