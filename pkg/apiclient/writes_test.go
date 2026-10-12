@@ -288,6 +288,23 @@ func TestDescribeWritePlansPerFlavor(t *testing.T) {
 	}
 }
 
+// Writes declare JSON even without a body: Data Center's XSRF guard rejects a
+// POST with no Content-Type with HTTP 403.
+func TestBodylessWriteDeclaresJSON(t *testing.T) {
+	t.Parallel()
+	var contentType string
+	c := newTestClient(t, FlavorDataCenter, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contentType = r.Header.Get("Content-Type")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	if err := c.DeleteComment(context.Background(), DeleteCommentReq{IssueKey: "ENG-1", ID: "7"}); err != nil {
+		t.Fatal(err)
+	}
+	if contentType != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", contentType)
+	}
+}
+
 // assertBodyDialect asserts a rich-text field took the flavor's wire shape:
 // an ADF doc that flattens back to text on Cloud, the raw string on DC.
 func assertBodyDialect(t *testing.T, flavor Flavor, raw json.RawMessage, wantText string) {
