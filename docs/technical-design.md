@@ -288,7 +288,7 @@ Jira owns the arithmetic; the CLI owns the parsing and the footguns.
 
 `worklog search` reports one user's worklogs across issues, following the
 event-filter contract in
-[`agent-facing-cli-best-practices.md`](https://github.com/AngelMsger/oa-cli/blob/main/docs/agent-facing-cli-best-practices.md)
+[`agent-facing-cli-best-practices.md`](https://github.com/AngelMsger/agent-clis/blob/main/docs/agent-facing-cli-best-practices.md)
 §3.5: `--since` is exclusive with `--from`/`--to`, `--to` requires
 `--from`, and the interval is always half-open `[from, to)` so adjacent
 windows never overlap. A window is **mandatory** (`WORKLOG_TIME_REQUIRED`),
