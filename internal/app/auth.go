@@ -101,7 +101,7 @@ func newAuthLogoutCmd(s *appState) *cobra.Command {
 				scheme = config.SchemePAT
 			}
 			if err := auth.ForgetForConfig(cfg, scheme, s.store); err != nil {
-				return err
+				return logoutFailure(err)
 			}
 			return s.emit(map[string]any{"server": cfg.BaseURL, "status": "removed"})
 		},
