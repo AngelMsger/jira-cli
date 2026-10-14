@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Login storage failures preserve any known saved backend and direct recovery
+  to the host credential store without recording an unconfirmed identity.
+  Logout failures report incomplete removal instead of generic recovery.
+
 ## [0.9.0] - 2026-10-12
 
 ### Changed

@@ -95,7 +95,7 @@ func TestAccountKey(t *testing.T) {
 // credential is found by: the keychain service and the fallback file. The
 // store's own behavior is tested in agent-cli-kit/credstore.
 func TestNewStoreKeepsJiraCredentialLocations(t *testing.T) {
-	t.Parallel()
+	// go-keyring's process-global mock is not safe for concurrent writes.
 	s := NewStore(t.TempDir())
 	if _, err := s.Save("svc.example.com:pat", "tok-xyz"); err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestResolveBasicSecret(t *testing.T) {
 }
 
 func TestResolvePrefersTransientSecret(t *testing.T) {
-	t.Parallel()
+	// go-keyring's process-global mock is not safe for concurrent writes.
 	s := NewStore(t.TempDir())
 	if _, err := s.Save("kms.example.com:pat", "stored-token"); err != nil {
 		t.Fatal(err)
@@ -172,7 +172,7 @@ func TestResolvePrefersTransientSecret(t *testing.T) {
 }
 
 func TestResolveFallsBackToStore(t *testing.T) {
-	t.Parallel()
+	// go-keyring's process-global mock is not safe for concurrent writes.
 	s := NewStore(t.TempDir())
 	if _, err := s.Save("kms2.example.com:pat", "stored-token"); err != nil {
 		t.Fatal(err)
