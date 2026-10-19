@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-19
+
 ### Changed
 
 - The `skill` commands, the Skill notice and `doctor` read the Skill version,
   load state, installed copies and agent directories through agent-cli-kit's
   `skill` package instead of a private copy. Output is unchanged.
+- Every write request declares `Content-Type: application/json`, as
+  bitbucket-cli and confluence-cli do, so a future write without a body is not
+  refused by Data Center's XSRF check. No current command changes.
 
 ### Fixed
 
@@ -299,7 +304,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/AngelMsger/jira-cli/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/AngelMsger/jira-cli/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/AngelMsger/jira-cli/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/AngelMsger/jira-cli/compare/v0.6.0...v0.7.0
