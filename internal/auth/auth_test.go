@@ -251,3 +251,33 @@ func TestResolveServiceMismatch(t *testing.T) {
 		t.Fatalf("Resolve() error = %+v, want CREDENTIAL_SERVICE_MISMATCH", ce)
 	}
 }
+
+// TestResolveLeadsSignInWithReuse checks where `auth reuse` goes when the
+// configuration file offers a login to reuse: after the host retry and before
+// the step that signs in for a missing secret, first for an absent identity,
+// and nowhere for an unreadable store.
+func TestResolveLeadsSignInWithReuse(t *testing.T) {
+	t.Parallel()
+	step := "jira-cli --use-context 'team' auth reuse"
+	retry := "Retry the same command with access to the host user environment (home directory and OS keychain)."
+	cfg := config.Config{BaseURL: "https://nocreds.example.com", ReuseStep: step, Auth: config.AuthConfig{Scheme: SchemePAT}}
+
+	_, err := Resolve(cfg, config.Secrets{}, newStoreWithKeyring(t.TempDir(), failingKeyring{err: keyring.ErrNotFound}))
+	want := []string{retry, "jira-cli doctor", step, MissingStep, "jira-cli auth guide", "Credential page: https://nocreds.example.com"}
+	if ce := cerrors.AsCLIError(err); ce.Code != "CREDENTIAL_NOT_VISIBLE_OR_MISSING" || !reflect.DeepEqual(ce.NextSteps, want) {
+		t.Fatalf("missing: %s %q", ce.Code, ce.NextSteps)
+	}
+
+	_, err = Resolve(cfg, config.Secrets{}, newStoreWithKeyring(t.TempDir(), failingKeyring{err: errors.New("sandbox denied keychain")}))
+	for _, s := range cerrors.AsCLIError(err).NextSteps {
+		if s == step {
+			t.Fatalf("an unreadable store offered reuse: %q", cerrors.AsCLIError(err).NextSteps)
+		}
+	}
+
+	cfg.Auth.Scheme = SchemeBasic
+	_, err = Resolve(cfg, config.Secrets{Password: "secret"}, newStoreWithKeyring(t.TempDir(), failingKeyring{err: keyring.ErrNotFound}))
+	if ce := cerrors.AsCLIError(err); ce.Code != "AUTH_NO_BASIC" || len(ce.NextSteps) == 0 || ce.NextSteps[0] != step {
+		t.Fatalf("absent identity: %s %q", ce.Code, ce.NextSteps)
+	}
+}

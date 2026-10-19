@@ -188,8 +188,8 @@ Runtime secrets supplied via env / `.env` / flag are used transiently and not
 persisted.
 
 The account key carries the host and scheme only, so every context on one
-server and scheme shares a secret — the basis on which `auth reuse` associates
-an identity without copying it. Cleanup follows from that: `config
+server and scheme shares a secret — the basis on which `auth reuse` points a
+context at a login without copying it. Cleanup follows from that: `config
 delete-context` and the `config init` orphan pass call `forgetUnusedCredential`,
 which compares `credentialKey` (host plus the scheme a fresh process would
 resolve from the file) across the contexts that remain and deletes a secret
@@ -610,12 +610,24 @@ canonical user-facing contract and product-specific authentication guidance.
 
 ### Existing credential reuse
 
-`internal/app/auth_reuse.go` matches stored contexts and verifies credentials
-through native auth/client code before associating identity with the destination.
-It never writes the credential store, consumes environment secrets or changes
-current_context. Public `config set-context` remains offline and credential-free.
-The destination's complete service identity and the captured config are checked
-again before writing. See the installation guide for the result and recovery contract.
+The decision is agent-cli-kit's `reuse` package, shared by the family.
+`internal/app/auth_reuse.go` describes the stored contexts to it
+(`config.ReuseContexts`: service identity = normalized URL plus the effective
+flavor from `config.ReuseFlavor`, credential-key spelling, effective scheme,
+username), and supplies native resolution (`auth.ResolveLookup`, which also
+reports what the keychain and file answered), verification and the write, which
+rereads and compares the config before replacing it. Verification runs
+`CurrentUser` against the destination's configuration with its flavor pinned,
+bounded by the reuse deadline (`verifyCredentialWithin`), and returns the
+canonical account (`User.Identifier()`: the Cloud accountId, else the Data
+Center username) so logins of one account count once. `config.ValidateService`
+decides which schemes the destination may adopt, which keeps personal access
+tokens off Cloud, for explicit selections too. It never writes the credential
+store, consumes environment secrets or changes current_context. Public
+`config set-context` remains offline and credential-free. `config.Load`
+computes the runtime-only `Config.ReuseStep` offline, which the guide, the setup
+plan, credential errors, `doctor` and HTTP 401 errors (in `root.Execute`) list
+before sign-in. See the installation guide for the result and recovery contract.
 
 Equivalent service URL overrides preserve the persisted native credential lookup
 key without redirecting requests or copying secrets. Logout removes that same

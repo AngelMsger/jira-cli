@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `auth reuse` no longer stops at the destination's own scheme. A context
+  without a working login (its token missing or rejected, or a basic context
+  without a username) adopts a login already verified for the same service and
+  flavor under the other scheme: another context's personal access token or
+  password, or one stored for this service that no context points at any more,
+  paired with the usernames the service's contexts record. Contexts under the
+  destination's own scheme still come first. Cloud accepts only basic
+  authentication, so a token is never adopted there, even when selected. A
+  working login is never replaced automatically. A username under `pat` is now
+  only a label: such a context is checked instead of being reported `unchanged`,
+  and a context on the same stored token no longer makes the command fail when
+  the keychain shows that token is gone. Checks the command did not make before run within ten
+  seconds (or `--timeout`), adopt only when the keychain itself showed the
+  destination has no working login, and otherwise leave the earlier answer. A
+  scheme supplied by flag, environment, `.env` or a credential variable keeps
+  reuse within it. The decision now comes from agent-cli-kit's shared `reuse`
+  package.
+- `auth reuse` reports the account a login signs in as (`account`: the Cloud
+  accountId or the Data Center username, and `account_name`), and logins the
+  service signs in as one account are one login rather than
+  `AUTH_REUSE_AMBIGUOUS`. The result also adds `scheme`, `username` and
+  `next_steps` (`whoami` to check access); `AUTH_REUSE_AMBIGUOUS` adds
+  `details.candidates`.
+- `config set-context`, `auth guide`, missing-credential errors, `doctor` and
+  HTTP 401 errors list `auth reuse` before any sign-in step when the
+  configuration file shows that a stored login could apply.
+
+### Added
+
+- `auth reuse --from-scheme <scheme>` selects the credential stored for the
+  service under that scheme; with `--from-context`, paired with that context's
+  username.
+
 ## [0.9.1] - 2026-10-19
 
 ### Changed

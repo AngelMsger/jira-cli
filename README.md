@@ -276,6 +276,8 @@ Released under the [MIT License](LICENSE).
 
 An installer can run `jira-cli config set-context team --base-url <url> --auth-scheme pat --activate` without credentials or network access. Members then run `jira-cli auth guide` and `jira-cli auth login`. See [team distribution and personal login](docs/installation.md#team-distribution-and-personal-login) for environment-only presets, conflict handling, and version-specific credential pages.
 
-To associate an existing login with a prepared team context, run
-`jira-cli --use-context team auth reuse --dry-run`, then omit `--dry-run`.
+To point a prepared team context at a login this machine already has for the
+same service, whichever scheme it uses (a personal access token, or a password
+or API token), run `jira-cli --use-context team auth reuse --dry-run`, then omit
+`--dry-run`. The result names the `account` the login signs in as.
 See [existing-login reuse](docs/installation.md#reuse-an-existing-login).

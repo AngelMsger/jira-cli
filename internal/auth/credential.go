@@ -16,6 +16,9 @@ const (
 	SchemeBasic = "basic" // HTTP Basic (DC: user+password; Cloud: email+API token)
 )
 
+// MissingStep is the last recovery step when no stored secret is visible.
+const MissingStep = "Only if the host retry also reports missing credentials, run `" + constants.AppName + " config init` in the user's terminal or set JIRA_* environment variables."
+
 func init() {
 	kit.Register(&kit.Product{
 		Schemes: []kit.Scheme{
@@ -27,7 +30,7 @@ func init() {
 		DefaultScheme:    SchemePAT,
 		Name:             "Jira",
 		Doctor:           constants.AppName + " doctor",
-		MissingStep:      "Only if the host retry also reports missing credentials, run `" + constants.AppName + " config init` in the user's terminal or set JIRA_* environment variables.",
+		MissingStep:      MissingStep,
 		InaccessibleStep: "Do not run `config init` unless the same check also fails in the host environment.",
 	})
 }
