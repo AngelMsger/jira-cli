@@ -132,7 +132,9 @@ pages. Use `--fields a,b.c` to project output down to the fields you need.
 
 Carry out explicitly authorized work without repeatedly asking permission.
 Resolve missing identities or ambiguous targets before writing; a dry run
-checks the request, not the user's intent. Respect an explicit read-only scope.
+checks the request, not the user's intent. When `auth reuse` adopted a login
+for the context, writes are made as its `account`: confirm that account with
+the user before the first write. Respect an explicit read-only scope.
 
 Before replying to a comment, classify its author from the author, body and
 available context. Treat uncertain authorship as human. For each human comment,
@@ -229,6 +231,11 @@ semantics, credential URL overrides, and failure recovery.
 
 ## Reuse existing authentication
 
-Before repeating login, preview `jira-cli --use-context <target> auth reuse
---dry-run`, then apply. Keep the separate `auth status` check. See
+A context without a working login can adopt one already verified for the same
+service: a personal access token or a password / API token, under either scheme
+(only basic on Cloud). Workspace tools apply this during setup. Elsewhere the
+CLI lists `auth reuse` ahead of any sign-in step, including after an HTTP 401,
+and its result names the next step and the login it used (`scheme`, `username`,
+`account`). A working login is never replaced automatically; `--from-context`
+and `--from-scheme` select one explicitly. See
 [reuse and ambiguity recovery](references/getting-started.md#reuse-existing-authentication).

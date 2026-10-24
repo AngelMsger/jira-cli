@@ -208,12 +208,18 @@ flow. The canonical behavior is in the installation guide's team setup section.
 
 ## Credential reuse
 
-Keep `auth reuse` separate from public service setup. Match complete URLs and
-provider scope before credential access, preserve configured destination identities,
-verify native credentials before associating missing identity, and retain operational
-failures. Never copy secrets, infer identity from environment variables or activate
-a context. Cover dry-run, ambiguity, scope mismatch, concurrent edits and fresh-load
-credential resolution. Native self-configuration follows the existing read-only exception.
+Keep `auth reuse` separate from public service setup. The decision belongs to
+agent-cli-kit's `reuse` package; this repository only describes its contexts,
+resolves, verifies and writes. Match complete URLs and the effective flavor
+before credential access, never replace a working login automatically, and
+retain operational failures. A username is an identity only under `basic`.
+Verification reports the canonical account (`User.Identifier()`), so logins of
+one account are one login. `config.ValidateService` keeps `pat` off Cloud for
+automatic and explicit sources alike. Never copy secrets, infer identity from
+environment variables or activate a context. Cover dry-run, ambiguity, scope
+mismatch (flavor included), concurrent edits, fresh-load credential resolution
+and both flavors' accounts. Native self-configuration follows the existing
+read-only exception.
 
 Contexts on one host and scheme share a stored secret, so never delete one by
 context alone. Route every cleanup through `forgetUnusedCredential`, which keeps

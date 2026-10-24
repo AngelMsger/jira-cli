@@ -28,9 +28,12 @@ type doctorCheck struct {
 
 // doctorReport is the result shape for `doctor`.
 type doctorReport struct {
-	Healthy bool           `json:"healthy"`
-	Checks  []doctorCheck  `json:"checks"`
-	Update  *update.Status `json:"update,omitempty"`
+	Healthy bool          `json:"healthy"`
+	Checks  []doctorCheck `json:"checks"`
+	// NextSteps leads with `auth reuse` when a stored login could replace a
+	// missing or rejected one.
+	NextSteps []string       `json:"next_steps,omitempty"`
+	Update    *update.Status `json:"update,omitempty"`
 }
 
 func newDoctorCmd(s *appState) *cobra.Command {
@@ -46,12 +49,14 @@ func newDoctorCmd(s *appState) *cobra.Command {
 				return err
 			}
 			if !report.Healthy {
+				steps := []string{
+					"Review the failing checks and their status/recovery_scope fields above.",
+					"When recovery_scope is host, retry `jira-cli doctor` with access to the host user environment."}
+				steps = append(append(steps, report.NextSteps...),
+					"Only configure credentials if the host retry also reports them missing.")
 				err := cerrors.New(cerrors.CategoryConfig, "DOCTOR_UNHEALTHY",
 					"one or more diagnostic checks failed").
-					WithNextSteps(
-						"Review the failing checks and their status/recovery_scope fields above.",
-						"When recovery_scope is host, retry `jira-cli doctor` with access to the host user environment.",
-						"Only configure credentials if the host retry also reports them missing.")
+					WithNextSteps(steps...)
 				if reportNeedsHostRetry(report) {
 					err.WithRecovery(cerrors.Recovery{
 						Action: "retry_current_command", Scope: "host",
@@ -93,6 +98,8 @@ func runDoctor(s *appState, skipUpdate bool) doctorReport {
 		client    apiclient.Client
 		reachable bool
 		doctorCtx context.Context
+		// rejected records a missing credential or one the server refused.
+		rejected = credErr != nil
 	)
 	if cfgOK && credOK {
 		ctx, cancel := cmdContext(s)
@@ -108,10 +115,12 @@ func runDoctor(s *appState, skipUpdate bool) doctorReport {
 		})
 		if err != nil {
 			client = nil
+			rejected = unauthorized(err)
 			checks = append(checks, doctorCheck{Name: "connectivity", OK: false, Status: diagnosticStatus(err), Detail: detailOf(err)})
 		} else {
 			info, pingErr := client.Ping(ctx)
 			reachable = pingErr == nil
+			rejected = unauthorized(pingErr)
 			checks = append(checks, doctorCheck{
 				Name: "connectivity", OK: reachable, Status: diagnosticStatus(pingErr),
 				Detail: pick(reachable,
@@ -138,6 +147,7 @@ func runDoctor(s *appState, skipUpdate bool) doctorReport {
 	// the healthy verdict (some locked-down deployments restrict it).
 	if client != nil && reachable {
 		user, userErr := client.CurrentUser(doctorCtx)
+		rejected = rejected || unauthorized(userErr)
 		checks = append(checks, doctorCheck{
 			Name: "current-user", OK: userErr == nil, Status: diagnosticStatus(userErr),
 			Detail: pick(userErr == nil,
@@ -147,6 +157,11 @@ func runDoctor(s *appState, skipUpdate bool) doctorReport {
 	checks = append(checks, companionSkillDoctorCheck())
 
 	report := doctorReport{Healthy: healthy, Checks: checks}
+	if step := cfg.ReuseStep; step != "" && cfgOK && rejected && !storeInaccessible(checks) {
+		// A stored login may replace a missing or rejected one; reuse reads
+		// the same store, so an unreadable store is recovered on the host.
+		report.NextSteps = []string{step}
+	}
 
 	// Release-update check: informational only, it never affects Healthy and
 	// never fails the command — being out of date is not a misconfiguration.
@@ -227,6 +242,24 @@ func diagnosticRecoveryScope(err error) string {
 		return recovery.Scope
 	}
 	return ""
+}
+
+func storeInaccessible(checks []doctorCheck) bool {
+	for _, c := range checks {
+		if c.Status == "inaccessible" {
+			return true
+		}
+	}
+	return false
+}
+
+// unauthorized reports a credential the server rejected (HTTP 401).
+func unauthorized(err error) bool {
+	if err == nil {
+		return false
+	}
+	ce := cerrors.AsCLIError(err)
+	return ce.Category == cerrors.CategoryAuth && ce.HTTPStatus == 401
 }
 
 func reportNeedsHostRetry(report doctorReport) bool {
