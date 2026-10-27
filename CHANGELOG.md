@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-27
+
 ### Changed
 
 - `auth reuse` no longer stops at the destination's own scheme. A context
@@ -35,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `config set-context`, `auth guide`, missing-credential errors, `doctor` and
   HTTP 401 errors list `auth reuse` before any sign-in step when the
   configuration file shows that a stored login could apply.
+- Update the companion Skill to `0.4.4` for `auth reuse`.
 
 ### Added
 
@@ -339,7 +342,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The e2e mockserver fakes the Data Center dialect only; the Cloud
   `/search/jql` path is covered by unit tests.
 
-[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/AngelMsger/jira-cli/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/AngelMsger/jira-cli/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/AngelMsger/jira-cli/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/AngelMsger/jira-cli/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/AngelMsger/jira-cli/compare/v0.7.0...v0.8.0
