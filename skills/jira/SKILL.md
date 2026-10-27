@@ -1,6 +1,6 @@
 ---
 name: jira
-version: 0.4.3
+version: 0.4.4
 description: "Drive Jira issue-tracking workflows from the command line. Read issues, search with JQL or filter flags, create/edit/assign issues, move them through workflow transitions, read/post/edit/delete comments, log and correct worklogs (time tracking), and discover valid field values (components, versions, issue types, statuses, priorities, labels, custom selects). Every mutating command accepts --dry-run, and a read-only posture (defaults.read_only / JIRA_CLI_READ_ONLY=1, overridable via --allow-writes) blocks writes before they leave the CLI. Use when the user gives a Jira issue key (like PROJ-123) or URL, or mentions a Jira ticket/issue; asks to find or summarise issues; run JQL; create/edit/assign an issue; transition an issue (start progress, close, reopen); read or post a comment; log work or time spent, or ask what they logged this week; browse projects; asks which values a field allows; check which Jira user they are; or wants a dry-run / read-only session. Works with Jira Cloud and Data Center / Server."
 metadata:
   requires:
@@ -151,7 +151,7 @@ limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
-- **Skill handshake — set `JIRA_CLI_SKILL=0.4.3`.** Once you have loaded
+- **Skill handshake — set `JIRA_CLI_SKILL=0.4.4`.** Once you have loaded
   this Skill, export that exact value in the environment used to run the CLI.
   The CLI compares it with the embedded Skill version and emits a structured
   stderr notice when the Skill is missing, old, or uses the legacy unversioned
