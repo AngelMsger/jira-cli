@@ -260,29 +260,35 @@ func TestReadOnlyDelegatesEveryRead(t *testing.T) {
 	page := ListOpts{Limit: 7, Cursor: "c1"}
 	items := ProjectItemsOpts{ListOpts: page, ProjectKey: "ENG"}
 
-	cases := map[string][]any{
-		"Flavor":                nil,
-		"BaseURL":               nil,
-		"Ping":                  {ctx},
-		"CurrentUser":           {ctx},
-		"GetIssue":              {ctx, GetIssueOpts{Key: "ENG-1", Expand: "changelog"}},
-		"SearchIssues":          {ctx, SearchOpts{ListOpts: page, JQL: "project = ENG", Fields: []string{"summary"}}},
-		"ListTransitions":       {ctx, "ENG-1"},
-		"ListProjects":          {ctx, ProjectListOpts{ListOpts: page, Query: "eng"}},
-		"GetProject":            {ctx, "ENG"},
-		"ListComponents":        {ctx, items},
-		"ListVersions":          {ctx, items},
-		"ListProjectIssueTypes": {ctx, items},
-		"ListProjectStatuses":   {ctx, "ENG"},
-		"ListPriorities":        {ctx, page},
-		"ListLabels":            {ctx, page},
-		"ListCreateFields":      {ctx, CreateFieldsOpts{ListOpts: page, ProjectKey: "ENG", IssueTypeID: "3"}},
-		"ListComments":          {ctx, ListCommentsOpts{ListOpts: page, IssueKey: "ENG-1"}},
-		"ListWorklogs":          {ctx, ListWorklogsOpts{ListOpts: page, IssueKey: "ENG-1"}},
-		"ResolveUser":           {ctx, "alice"},
-		"DescribeWrite":         {ctx, DeleteCommentReq{IssueKey: "ENG-1", ID: "10"}},
+	// argsFor builds fresh arguments on every call, so the expected values are
+	// independent of the ones handed to the wrapper: a wrapper that mutated an
+	// argument in place (say SearchOpts.Fields) before forwarding it would
+	// otherwise change the expectation along with it.
+	argsFor := func() map[string][]any {
+		return map[string][]any{
+			"Flavor":                nil,
+			"BaseURL":               nil,
+			"Ping":                  {ctx},
+			"CurrentUser":           {ctx},
+			"GetIssue":              {ctx, GetIssueOpts{Key: "ENG-1", Expand: "changelog"}},
+			"SearchIssues":          {ctx, SearchOpts{ListOpts: page, JQL: "project = ENG", Fields: []string{"summary"}}},
+			"ListTransitions":       {ctx, "ENG-1"},
+			"ListProjects":          {ctx, ProjectListOpts{ListOpts: page, Query: "eng"}},
+			"GetProject":            {ctx, "ENG"},
+			"ListComponents":        {ctx, items},
+			"ListVersions":          {ctx, items},
+			"ListProjectIssueTypes": {ctx, items},
+			"ListProjectStatuses":   {ctx, "ENG"},
+			"ListPriorities":        {ctx, page},
+			"ListLabels":            {ctx, page},
+			"ListCreateFields":      {ctx, CreateFieldsOpts{ListOpts: page, ProjectKey: "ENG", IssueTypeID: "3"}},
+			"ListComments":          {ctx, ListCommentsOpts{ListOpts: page, IssueKey: "ENG-1"}},
+			"ListWorklogs":          {ctx, ListWorklogsOpts{ListOpts: page, IssueKey: "ENG-1"}},
+			"ResolveUser":           {ctx, "alice"},
+			"DescribeWrite":         {ctx, DeleteCommentReq{IssueKey: "ENG-1", ID: "10"}},
+		}
 	}
-	assertCoversMethods(t, reflect.TypeFor[Reader](), slices.Collect(maps.Keys(cases)))
+	assertCoversMethods(t, reflect.TypeFor[Reader](), slices.Collect(maps.Keys(argsFor())))
 
 	call := func(c Client, method string, args []any) []any {
 		in := make([]reflect.Value, len(args))
@@ -296,15 +302,16 @@ func TestReadOnlyDelegatesEveryRead(t *testing.T) {
 		return out
 	}
 
-	for method, args := range cases {
+	for method := range argsFor() {
 		t.Run(method, func(t *testing.T) {
 			t.Parallel()
 			inner := &recordingReader{}
-			got := call(NewReadOnly(inner), method, args)
-			if want := call(&recordingReader{}, method, args); !reflect.DeepEqual(got, want) {
+			got := call(NewReadOnly(inner), method, argsFor()[method])
+			expected := argsFor()[method]
+			if want := call(&recordingReader{}, method, expected); !reflect.DeepEqual(got, want) {
 				t.Errorf("results = %#v, want the inner client's %#v", got, want)
 			}
-			want := []readCall{{method: method, args: args}}
+			want := []readCall{{method: method, args: expected}}
 			if !reflect.DeepEqual(inner.calls, want) {
 				t.Errorf("inner client received %#v, want %#v", inner.calls, want)
 			}
