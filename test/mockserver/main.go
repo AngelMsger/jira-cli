@@ -1,6 +1,7 @@
 // Command mockserver is a minimal in-memory Jira Data Center REST API (v2),
 // used by scripts/e2e.sh to exercise jira-cli end-to-end without a real
 // server. It prints its base URL on the first line of stdout, then serves.
+// When MOCK_WRITE_LOG names a file, every write request is appended to it.
 package main
 
 import (
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 )
 
 func main() {
@@ -21,10 +23,48 @@ func main() {
 	fmt.Printf("http://%s\n", ln.Addr().String())
 	os.Stdout.Sync()
 
-	if err := http.Serve(ln, routes()); err != nil {
+	handler := routes()
+	if path := os.Getenv("MOCK_WRITE_LOG"); path != "" {
+		handler = logWrites(handler, path)
+	}
+	if err := http.Serve(ln, handler); err != nil {
 		fmt.Fprintln(os.Stderr, "mockserver:", err)
 		os.Exit(1)
 	}
+}
+
+// logWrites appends "METHOD PATH" to the file at path for every request that
+// can change state, so scripts/e2e.sh can assert that read-only mode let no
+// write reach the server. POST search is a read and is not logged. A request
+// that cannot be logged fails with 500 rather than going unrecorded.
+func logWrites(next http.Handler, path string) http.Handler {
+	var mu sync.Mutex
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		read := r.Method == http.MethodGet || r.Method == http.MethodHead ||
+			(r.Method == http.MethodPost && r.URL.Path == "/rest/api/2/search")
+		if !read {
+			mu.Lock()
+			err := appendLine(path, r.Method+" "+r.URL.Path)
+			mu.Unlock()
+			if err != nil {
+				jiraError(w, http.StatusInternalServerError, "mockserver: write log failed: "+err.Error())
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func appendLine(path, line string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(f, line); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 func routes() http.Handler {

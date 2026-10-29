@@ -16,8 +16,19 @@ import (
 )
 
 // Client is the flavor-agnostic Jira API surface. All methods return
-// normalized models; flavor-specific request shapes are hidden.
+// normalized models; flavor-specific request shapes are hidden. It is the
+// union of Reader and Writer, so every method is classified as one or the
+// other; NewReadOnly relies on that split.
 type Client interface {
+	Reader
+	Writer
+}
+
+// Reader is the part of Client that never changes remote state: lookups,
+// listings, connectivity probes, and the --dry-run preview. The read-only
+// wrapper delegates exactly this interface, so a method that can mutate Jira
+// must never be declared here.
+type Reader interface {
 	Flavor() Flavor
 	BaseURL() string
 	Ping(ctx context.Context) (ServerInfo, error)
@@ -26,11 +37,7 @@ type Client interface {
 
 	GetIssue(ctx context.Context, opt GetIssueOpts) (*Issue, error)
 	SearchIssues(ctx context.Context, opt SearchOpts) (ListResult[Issue], error)
-	CreateIssue(ctx context.Context, req CreateIssueReq) (*Issue, error)
-	EditIssue(ctx context.Context, req EditIssueReq) (*Issue, error)
-	AssignIssue(ctx context.Context, req AssignIssueReq) error
 	ListTransitions(ctx context.Context, issueKey string) (ListResult[Transition], error)
-	TransitionIssue(ctx context.Context, req TransitionIssueReq) error
 
 	ListProjects(ctx context.Context, opt ProjectListOpts) (ListResult[Project], error)
 	GetProject(ctx context.Context, key string) (*Project, error)
@@ -50,14 +57,8 @@ type Client interface {
 	ListCreateFields(ctx context.Context, opt CreateFieldsOpts) (ListResult[FieldMeta], error)
 
 	ListComments(ctx context.Context, opt ListCommentsOpts) (ListResult[Comment], error)
-	AddComment(ctx context.Context, req AddCommentReq) (*Comment, error)
-	UpdateComment(ctx context.Context, req UpdateCommentReq) (*Comment, error)
-	DeleteComment(ctx context.Context, req DeleteCommentReq) error
 
 	ListWorklogs(ctx context.Context, opt ListWorklogsOpts) (ListResult[Worklog], error)
-	AddWorklog(ctx context.Context, req AddWorklogReq) (*Worklog, error)
-	UpdateWorklog(ctx context.Context, req UpdateWorklogReq) (*Worklog, error)
-	DeleteWorklog(ctx context.Context, req DeleteWorklogReq) error
 
 	// ResolveUser resolves a user selector (Cloud accountId, DC username, or a
 	// display-name/email query) to a unique user. It backs assignee flags.
@@ -66,6 +67,24 @@ type Client interface {
 	// DescribeWrite reports the HTTP request a write op would send, for
 	// --dry-run previews. It never sends the write itself.
 	DescribeWrite(ctx context.Context, op any) (WriteRequestPlan, error)
+}
+
+// Writer is the part of Client that changes remote state. The read-only
+// wrapper (NewReadOnly) blocks each method explicitly, so adding one here
+// without its blocking override fails compilation.
+type Writer interface {
+	CreateIssue(ctx context.Context, req CreateIssueReq) (*Issue, error)
+	EditIssue(ctx context.Context, req EditIssueReq) (*Issue, error)
+	AssignIssue(ctx context.Context, req AssignIssueReq) error
+	TransitionIssue(ctx context.Context, req TransitionIssueReq) error
+
+	AddComment(ctx context.Context, req AddCommentReq) (*Comment, error)
+	UpdateComment(ctx context.Context, req UpdateCommentReq) (*Comment, error)
+	DeleteComment(ctx context.Context, req DeleteCommentReq) error
+
+	AddWorklog(ctx context.Context, req AddWorklogReq) (*Worklog, error)
+	UpdateWorklog(ctx context.Context, req UpdateWorklogReq) (*Worklog, error)
+	DeleteWorklog(ctx context.Context, req DeleteWorklogReq) error
 }
 
 // apiClient is the single Client implementation. Per-flavor behaviour is

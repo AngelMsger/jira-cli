@@ -73,7 +73,8 @@ MOCK_LOG="$MOCK_DIR/server.log"
 trap '[[ -z "${MOCK_PID:-}" ]] || kill "$MOCK_PID" 2>/dev/null || true; rm -rf "$MOCK_DIR"' EXIT
 # Build explicitly so cleanup owns the server PID rather than a go-run wrapper.
 go build -o "$MOCK_DIR/mockserver" ./test/mockserver || exit 1
-"$MOCK_DIR/mockserver" >"$MOCK_LOG" 2>/dev/null &
+WRITE_LOG="$MOCK_DIR/writes.log"
+MOCK_WRITE_LOG="$WRITE_LOG" "$MOCK_DIR/mockserver" >"$MOCK_LOG" 2>/dev/null &
 MOCK_PID=$!
 
 MOCK_URL=""
@@ -248,21 +249,29 @@ assert_exit      "unknown subcommand -> 2" 2               "${CLI[@]}" issue fro
 assert_err_contains "unknown subcommand suggests" "UNKNOWN_COMMAND" \
                                           "${CLI[@]}" config use-contexts
 
-# Read-only mode: env JIRA_CLI_READ_ONLY blocks writes; --allow-writes
-# overrides it; --dry-run remains usable.
+# Read-only mode: env JIRA_CLI_READ_ONLY blocks every write command before any
+# request is sent; --dry-run remains usable; --allow-writes overrides it. The
+# mock server's write log must stay empty until the first --allow-writes call.
 RO_ENV=(env JIRA_CLI_READ_ONLY=1)
+: >"$WRITE_LOG"
 assert_err_contains "read-only blocks issue create"  "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" issue create --project ENG --type Task --summary "X"
 assert_err_contains "read-only error names --allow-writes" "--allow-writes" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" issue create --project ENG --type Task --summary "X"
+assert_err_contains "read-only blocks issue edit"    "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" issue edit ENG-1 --summary "Renamed"
+assert_err_contains "read-only blocks issue assign"  "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" issue assign ENG-1 --to alice
+assert_err_contains "read-only blocks issue transition" "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" issue transition ENG-1 --to "Start Progress"
 assert_exit         "read-only exit category=permission -> 5" 5 \
                                                      "${RO_ENV[@]}" "${CLI[@]}" comment delete 10001 --issue ENG-1 --yes
 assert_contains     "read-only + --dry-run still previews" '"method": "DELETE"' \
                                                      "${RO_ENV[@]}" "${CLI[@]}" comment delete 10001 --issue ENG-1 --yes --dry-run
-assert_contains     "--allow-writes overrides read-only"   "deleted" \
-                                                     "${RO_ENV[@]}" "${CLI[@]}" --allow-writes comment delete 10001 --issue ENG-1 --yes
 assert_err_contains "read-only blocks comment add"   "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" comment add ENG-1 --body "x"
+assert_err_contains "read-only blocks comment update" "READONLY_BLOCKED" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" comment update 10001 --issue ENG-1 --body "revised"
 assert_err_contains "read-only blocks worklog add"   "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" worklog add ENG-1 --time-spent 1h
 assert_err_contains "read-only blocks worklog update" "READONLY_BLOCKED" \
@@ -271,8 +280,20 @@ assert_exit         "read-only blocks worklog delete -> 5" 5 \
                                                      "${RO_ENV[@]}" "${CLI[@]}" worklog delete 200 --issue ENG-1 --yes
 assert_contains     "read-only + worklog --dry-run still previews" '"method": "POST"' \
                                                      "${RO_ENV[@]}" "${CLI[@]}" worklog add ENG-1 --time-spent 1h --dry-run
+if [[ -s "$WRITE_LOG" ]]; then
+  fail "read-only sent no write request (server saw: $(tr '\n' ';' <"$WRITE_LOG"))"
+else
+  pass "read-only sent no write request"
+fi
+assert_contains     "--allow-writes overrides read-only"   "deleted" \
+                                                     "${RO_ENV[@]}" "${CLI[@]}" --allow-writes comment delete 10001 --issue ENG-1 --yes
 assert_contains     "--allow-writes overrides read-only for worklogs" "deleted" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" --allow-writes worklog delete 200 --issue ENG-1 --yes
+if grep -qx "DELETE /rest/api/2/issue/ENG-1/worklog/200" "$WRITE_LOG"; then
+  pass "write log records --allow-writes requests"
+else
+  fail "write log records --allow-writes requests"
+fi
 
 echo "==> multi-context checks"
 TMPCFG2="$(mktemp -d)"
