@@ -500,9 +500,13 @@ Two orthogonal write-protections, layered on top of `--yes`:
    `READONLY_BLOCKED` (`category=permission`, exit code 5) from every
    mutating method before any HTTP request is sent. The root persistent
    flag `--allow-writes` overrides the posture for a single invocation.
-   `DescribeWrite` (used by `--dry-run`) is intentionally not
-   overridden by the wrapper, so previews still work under a locked
-   session.
+   `Client` is the union of two interfaces: `Reader` (lookups, listings,
+   probes and `DescribeWrite`) and `Writer` (every mutation). The wrapper
+   keeps the inner client only as a `Reader` and blocks each `Writer`
+   method itself, so a new write without a blocking override does not
+   compile, and no write can be forwarded. `DescribeWrite` (used by
+   `--dry-run`) is a `Reader` method, so previews still work under a
+   locked session.
 
 Out of scope: `config init`, `auth login|logout`, and `skill install` are
 CLI self-configuration / local IO, not remote mutations — they remain
@@ -557,7 +561,9 @@ informational check that does not change connectivity health.
   permissions, JQL construction, the ADF bridge (including the
   write→read round-trip), the per-flavor `DescribeWrite` plan table
   (method / path / payload dialect — and estimate query string — for every
-  write op), Cloud user resolution, read-only blocking of every mutator,
+  write op), Cloud user resolution, read-only blocking of every mutator
+  and pass-through of every read (both tables checked against the
+  `Writer` and `Reader` method sets),
   that errors carry jira-cli's hints, the transport's User-Agent default,
   and urlref. Output formats, `--fields`, the exit-code mapping, retries,
   the credential store and auth header encoding are tested in
@@ -573,8 +579,10 @@ informational check that does not change connectivity health.
 - **End-to-end**: `scripts/e2e.sh` builds the binary against an
   in-process mock Jira (Data Center v2 dialect) and exercises every
   command, asserting stdout contract and exit codes. The read-only /
-  dry-run safety modes are covered here as well — every blocked-write
-  path is paired with its `--allow-writes` and `--dry-run` counter-test.
+  dry-run safety modes are covered here as well: every write command is
+  run under read-only, the mock server's write log (`MOCK_WRITE_LOG`)
+  must show that none reached it, and `--allow-writes` and `--dry-run`
+  counter-tests follow.
   Worklog coverage includes the CRUD happy path, the estimate query string
   in a `--dry-run` preview, the mandatory `worklog search` window, and the
   missing-identifier errors naming `worklog list`.

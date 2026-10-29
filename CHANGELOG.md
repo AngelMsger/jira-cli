@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `apiclient.Reader` and `apiclient.Writer`, the read and write halves of
+  `apiclient.Client`, for library callers. `Client` keeps exactly the same
+  methods and signatures.
+
+### Changed
+
+- The read-only wrapper (`apiclient.NewReadOnly`) now holds the inner client
+  only as a `Reader` and blocks every `Writer` method itself, so a write added
+  to the client without a blocking override fails to compile instead of
+  passing through read-only mode. CLI behavior, output and errors are
+  unchanged.
+
+### Fixed
+
+- `docs/read-only-mode.md` now lists `worklog add|update|delete` among the
+  commands that accept `--dry-run`.
+
 ## [0.10.0] - 2026-10-27
 
 ### Changed
