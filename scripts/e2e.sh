@@ -133,7 +133,7 @@ assert_exit      "field options unknown field -> 6" 6      "${CLI[@]}" field opt
 assert_contains  "issue get"              "Welcome"        "${CLI[@]}" issue get ENG-1
 # --verbose logs one line per request (method, URL, status) on stderr: never on
 # stdout, which stays data, and never a credential.
-VERBOSE_ERR="$(mktemp)"
+VERBOSE_ERR="$MOCK_DIR/verbose.err"
 VERBOSE_OUT="$("${CLI[@]}" --verbose issue get ENG-1 2>"$VERBOSE_ERR")"
 if grep -Eq '^GET http://[^ ]+ -> 200$' "$VERBOSE_ERR" &&
   [[ "$VERBOSE_OUT" == *Welcome* && "$VERBOSE_OUT" != *" -> 200"* ]] &&
@@ -142,8 +142,12 @@ if grep -Eq '^GET http://[^ ]+ -> 200$' "$VERBOSE_ERR" &&
 else
   fail "--verbose logs each request on stderr only"; head -5 "$VERBOSE_ERR"
 fi
-assert_err_contains "--verbose doctor logs its requests" " -> 200" \
-                                          "${CLI[@]}" --verbose doctor --no-update-check
+if "${CLI[@]}" --verbose doctor --no-update-check >/dev/null 2>"$MOCK_DIR/verbose-doctor.err" &&
+  grep -Eq '^GET http://[^ ]+ -> 200$' "$MOCK_DIR/verbose-doctor.err"; then
+  pass "--verbose doctor logs its requests on stderr"
+else
+  fail "--verbose doctor logs its requests on stderr"; head -5 "$MOCK_DIR/verbose-doctor.err"
+fi
 assert_contains  "issue get has components" "PaaS"         "${CLI[@]}" issue get ENG-1
 assert_contains  "issue get by url"       "Welcome"        "${CLI[@]}" issue get "$MOCK_URL/browse/ENG-1"
 assert_contains  "fields projection"      '"key"'          "${CLI[@]}" issue get ENG-1 --fields key,summary

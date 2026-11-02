@@ -25,11 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docs/read-only-mode.md` now lists `worklog add|update|delete` among the
   commands that accept `--dry-run`.
-- `--verbose` now logs each HTTP request's method, URL and status on stderr,
-  for every command as well as `doctor`, the login check and flavor detection.
-  The flag was accepted but logged nothing, although the error guidance points
-  at it. It uses agent-cli-kit's transport log, which never writes headers or
-  bodies.
+- `--verbose` now logs each request to the server (method, URL and status) on
+  stderr, for every command as well as `doctor`, the login check and flavor
+  detection. The flag was accepted but logged nothing, although the error
+  guidance points at it. It uses agent-cli-kit's transport log, which never
+  writes headers or bodies. The release check, which asks for a newer version,
+  is not logged.
 
 ## [0.10.0] - 2026-10-27
 
