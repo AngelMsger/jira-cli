@@ -131,7 +131,7 @@ func verifyCredentialWithin(parent context.Context, s *appState, cfg config.Conf
 	}
 	ctx, cancel := context.WithTimeout(parent, s.timeout())
 	defer cancel()
-	client, _, err := apiclient.Build(ctx, apiclient.BuildParams{BaseURL: cfg.BaseURL, Flavor: cfg.Flavor, AuthDecorator: cred.Decorator(), Timeout: s.timeout(), MaxRetries: cfg.Defaults.MaxRetries})
+	client, _, err := apiclient.Build(ctx, apiclient.BuildParams{BaseURL: cfg.BaseURL, Flavor: cfg.Flavor, AuthDecorator: cred.Decorator(), Timeout: s.timeout(), MaxRetries: cfg.Defaults.MaxRetries, Verbose: s.verboseLog()})
 	if err != nil {
 		return apiclient.User{}, err
 	}

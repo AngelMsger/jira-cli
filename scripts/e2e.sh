@@ -131,6 +131,19 @@ assert_contains  "field options by name + type" "Critical" \
                                           "${CLI[@]}" field options Severity --project ENG --type Bug
 assert_exit      "field options unknown field -> 6" 6      "${CLI[@]}" field options bogus --project ENG
 assert_contains  "issue get"              "Welcome"        "${CLI[@]}" issue get ENG-1
+# --verbose logs one line per request (method, URL, status) on stderr: never on
+# stdout, which stays data, and never a credential.
+VERBOSE_ERR="$(mktemp)"
+VERBOSE_OUT="$("${CLI[@]}" --verbose issue get ENG-1 2>"$VERBOSE_ERR")"
+if grep -Eq '^GET http://[^ ]+ -> 200$' "$VERBOSE_ERR" &&
+  [[ "$VERBOSE_OUT" == *Welcome* && "$VERBOSE_OUT" != *" -> 200"* ]] &&
+  ! grep -qF "$JIRA_PERSONAL_ACCESS_TOKEN" "$VERBOSE_ERR"; then
+  pass "--verbose logs each request on stderr only"
+else
+  fail "--verbose logs each request on stderr only"; head -5 "$VERBOSE_ERR"
+fi
+assert_err_contains "--verbose doctor logs its requests" " -> 200" \
+                                          "${CLI[@]}" --verbose doctor --no-update-check
 assert_contains  "issue get has components" "PaaS"         "${CLI[@]}" issue get ENG-1
 assert_contains  "issue get by url"       "Welcome"        "${CLI[@]}" issue get "$MOCK_URL/browse/ENG-1"
 assert_contains  "fields projection"      '"key"'          "${CLI[@]}" issue get ENG-1 --fields key,summary
