@@ -112,6 +112,7 @@ func runDoctor(s *appState, skipUpdate bool) doctorReport {
 			AuthDecorator: cred.Decorator(),
 			Timeout:       cfg.Defaults.Timeout,
 			MaxRetries:    cfg.Defaults.MaxRetries,
+			Verbose:       s.verboseLog(),
 		})
 		if err != nil {
 			client = nil

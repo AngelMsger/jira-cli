@@ -131,6 +131,25 @@ assert_contains  "field options by name + type" "Critical" \
                                           "${CLI[@]}" field options Severity --project ENG --type Bug
 assert_exit      "field options unknown field -> 6" 6      "${CLI[@]}" field options bogus --project ENG
 assert_contains  "issue get"              "Welcome"        "${CLI[@]}" issue get ENG-1
+# --verbose logs one line per request (method, URL, status) on stderr: never on
+# stdout, which stays data, and never a credential.
+VERBOSE_ERR="$MOCK_DIR/verbose.err"
+VERBOSE_OUT="$(JIRA_SERVER="http://verbose-user:e2e-url-secret@${MOCK_URL#http://}" "${CLI[@]}" --verbose issue get ENG-1 2>"$VERBOSE_ERR")"
+if grep -Eq '^GET http://verbose-user:xxxxx@[^ ]+ -> 200$' "$VERBOSE_ERR" &&
+  [[ "$VERBOSE_OUT" == *Welcome* && "$VERBOSE_OUT" != *" -> 200"* ]] &&
+  ! grep -qF 'e2e-url-secret' "$VERBOSE_ERR" &&
+  [[ "$VERBOSE_OUT" != *e2e-url-secret* ]] &&
+  ! grep -qF "$JIRA_PERSONAL_ACCESS_TOKEN" "$VERBOSE_ERR"; then
+  pass "--verbose logs on stderr only and masks the URL password"
+else
+  fail "--verbose logs on stderr only and masks the URL password"; head -5 "$VERBOSE_ERR"
+fi
+if "${CLI[@]}" --verbose doctor --no-update-check >/dev/null 2>"$MOCK_DIR/verbose-doctor.err" &&
+  grep -Eq '^GET http://[^ ]+ -> 200$' "$MOCK_DIR/verbose-doctor.err"; then
+  pass "--verbose doctor logs its requests on stderr"
+else
+  fail "--verbose doctor logs its requests on stderr"; head -5 "$MOCK_DIR/verbose-doctor.err"
+fi
 assert_contains  "issue get has components" "PaaS"         "${CLI[@]}" issue get ENG-1
 assert_contains  "issue get by url"       "Welcome"        "${CLI[@]}" issue get "$MOCK_URL/browse/ENG-1"
 assert_contains  "fields projection"      '"key"'          "${CLI[@]}" issue get ENG-1 --fields key,summary
