@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Mask passwords embedded in the server URL in `--verbose` request logs by
+  pinning agent-cli-kit's merged transport fix (`8e0dd08af52d`).
+- Omit URL credentials from issue links returned by get and search on both
+  Cloud and Data Center, while retaining them for authenticated requests.
+
 - `docs/read-only-mode.md` now lists `worklog add|update|delete` among the
   commands that accept `--dry-run`.
 - `--verbose` now logs each request to the server (method, URL and status) on

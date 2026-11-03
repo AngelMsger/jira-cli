@@ -80,7 +80,11 @@ func mapIssue(r rawIssue, baseURL string) Issue {
 		Updated:         r.Fields.Updated,
 	}
 	if r.Key != "" && baseURL != "" {
-		issue.URL = baseURL + "/browse/" + r.Key
+		if link, err := url.Parse(baseURL + "/browse/" + r.Key); err == nil {
+			// Resource links must not expose credentials from the request URL.
+			link.User = nil
+			issue.URL = link.String()
+		}
 	}
 	if r.Fields.Status != nil {
 		issue.Status = &Status{
