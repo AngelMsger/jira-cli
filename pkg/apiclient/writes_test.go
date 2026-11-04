@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	cerrors "github.com/angelmsger/jira-cli/pkg/errors"
 	"github.com/angelmsger/jira-cli/pkg/transport"
@@ -324,6 +325,49 @@ func assertBodyDialect(t *testing.T, flavor Flavor, raw json.RawMessage, wantTex
 	var s string
 	if err := json.Unmarshal(raw, &s); err != nil || s != wantText {
 		t.Errorf("dc body = %s, want %q verbatim", raw, wantText)
+	}
+}
+
+// Cloud's JQL search is a POST that only reads, so a 307 or 308 in front of
+// Jira sends the same search again, and a 503 is retried, as for a GET. A
+// 302 would turn it into a GET without the JQL, so it is reported with its
+// status instead. With agent-cli-kit v0.7.0 an unmarked POST got every
+// redirect back and was sent once.
+func TestCloudSearchIsFollowedAndRetriedAsARead(t *testing.T) {
+	t.Parallel()
+	for _, status := range []int{http.StatusTemporaryRedirect, http.StatusPermanentRedirect, http.StatusServiceUnavailable, http.StatusFound} {
+		var sent int
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var body struct {
+				JQL string `json:"jql"`
+			}
+			if r.Method != "POST" || json.NewDecoder(r.Body).Decode(&body) != nil || body.JQL == "" {
+				t.Errorf("%d: got %s %s without the JQL", status, r.Method, r.URL.Path)
+			}
+			if sent++; sent == 1 {
+				if status == http.StatusServiceUnavailable {
+					w.WriteHeader(status)
+				} else {
+					http.Redirect(w, r, "/moved"+r.URL.Path, status)
+				}
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"issues":[],"isLast":true}`))
+		}))
+		c := New(Config{Flavor: FlavorCloud, BaseURL: srv.URL,
+			Transport: transport.New(transport.Options{MaxRetries: 1, RetryBaseDelay: time.Millisecond})})
+		_, err := c.SearchIssues(context.Background(), SearchOpts{JQL: "project = ENG"})
+		srv.Close()
+		if status == http.StatusFound {
+			if ce := cerrors.AsCLIError(err); ce == nil || ce.HTTPStatus != status || sent != 1 {
+				t.Fatalf("302: got %+v after %d requests; want the redirect reported", ce, sent)
+			}
+			continue
+		}
+		if err != nil || sent != 2 {
+			t.Fatalf("%d: got %v after %d requests; want the search sent again", status, err, sent)
+		}
 	}
 }
 

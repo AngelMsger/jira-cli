@@ -41,9 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transport returns a write's redirect instead of following it. Before, a
   301, 302 or 303 was followed with a GET, and a 200 from the page it landed
   on read as an acknowledged write whose response could not be decoded; a 307
-  or 308 sent the write again to the new location. A redirected search
-  (Cloud's JQL search is a POST) reports the 3xx status too, instead of a
-  decode error.
+  or 308 sent the write again to the new location.
+- Cloud's JQL search is a POST that only reads, so it is marked as a read
+  (agent-cli-kit's `transport.AsRead`): a 307 or 308 sends the same search
+  again and a transient failure is retried, as for a GET. A 301, 302 or 303,
+  which would turn it into a GET without the JQL, reports the 3xx status
+  instead of a decode error.
 - `config init`'s plain prompts read through agent-cli-kit's `terminal`
   package too: an answer cut short by a failed read (not the end of input) is
   an error, not an answer, so a broken stdin can no longer confirm "Save
