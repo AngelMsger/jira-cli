@@ -69,7 +69,7 @@ func (c *apiClient) CreateIssue(ctx context.Context, req CreateIssueReq) (*Issue
 		return nil, err
 	}
 	if created.Key == "" {
-		return nil, missingWriteIdentity(createWriteTarget(req))
+		return nil, cerrors.MissingWriteIdentity(createWriteTarget(req))
 	}
 	return GetIssueAfterWrite(ctx, c, created.Key)
 }

@@ -35,7 +35,7 @@ func (c *apiClient) AddComment(ctx context.Context, req AddCommentReq) (*Comment
 		return nil, err
 	}
 	if raw.ID == "" {
-		return nil, missingWriteIdentity(c.commentWriteTarget(req.IssueKey, ""))
+		return nil, cerrors.MissingWriteIdentity(c.commentWriteTarget(req.IssueKey, ""))
 	}
 	out := mapComment(raw, req.IssueKey)
 	return &out, nil
@@ -70,7 +70,7 @@ func (c *apiClient) UpdateComment(ctx context.Context, req UpdateCommentReq) (*C
 		return nil, err
 	}
 	if raw.ID == "" {
-		return nil, missingWriteIdentity(c.commentWriteTarget(req.IssueKey, req.ID))
+		return nil, cerrors.MissingWriteIdentity(c.commentWriteTarget(req.IssueKey, req.ID))
 	}
 	out := mapComment(raw, req.IssueKey)
 	return &out, nil

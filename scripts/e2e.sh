@@ -175,6 +175,9 @@ assert_contains  "comment list"           "First comment"  "${CLI[@]}" comment l
 assert_contains  "comment add"            "looks good"     "${CLI[@]}" comment add ENG-1 --body "looks good"
 assert_contains  "comment update"         "revised"        "${CLI[@]}" comment update 10001 --issue ENG-1 --body "revised"
 assert_exit      "comment delete needs --yes -> 2" 2       "${CLI[@]}" comment delete 10001 --issue ENG-1 </dev/null
+# /dev/null is a character device but not a terminal: no prompt, a structured error.
+assert_err_contains "stdin on /dev/null is not a terminal" "DELETE_NEEDS_YES" \
+                                          "${CLI[@]}" comment delete 10001 --issue ENG-1 </dev/null
 assert_contains  "comment delete --yes"   "deleted"        "${CLI[@]}" comment delete 10001 --issue ENG-1 --yes
 assert_contains  "comment delete dry-run" '"dry_run": true' \
                                           "${CLI[@]}" comment delete 10001 --issue ENG-1 --dry-run
@@ -277,6 +280,14 @@ assert_err_contains "read-only blocks issue create"  "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" issue create --project ENG --type Task --summary "X"
 assert_err_contains "read-only error names --allow-writes" "--allow-writes" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" issue create --project ENG --type Task --summary "X"
+# Turning read-only mode off is the user's call: the error offers --allow-writes
+# only for an authorized write and never tells an agent to unset the switch.
+RO_ERR="$("${RO_ENV[@]}" "${CLI[@]}" issue create --project ENG --type Task --summary "X" 2>&1 >/dev/null)"
+if [[ "$RO_ERR" == *"Only if the user authorized this write"* && "$RO_ERR" != *"unset JIRA_CLI_READ_ONLY"* ]]; then
+  pass "read-only error leaves the switch to the user"
+else
+  fail "read-only error leaves the switch to the user"; printf '%s\n' "$RO_ERR" | head -5
+fi
 assert_err_contains "read-only blocks issue edit"    "READONLY_BLOCKED" \
                                                      "${RO_ENV[@]}" "${CLI[@]}" issue edit ENG-1 --summary "Renamed"
 assert_err_contains "read-only blocks issue assign"  "READONLY_BLOCKED" \
