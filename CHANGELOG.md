@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `config init`'s plain prompts read through agent-cli-kit's `terminal`
+  package too: an answer cut short by a failed read (not the end of input) is
+  an error, not an answer, so a broken stdin can no longer confirm "Save
+  configuration anyway?".
 - A command started with stdin on `/dev/null` (cron, CI, agent runners) no
   longer counts it as a terminal. `comment delete` and `worklog delete` without
   `--yes` now fail with `DELETE_NEEDS_YES` instead of reading an empty answer
