@@ -36,11 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - A write that Jira answered with a redirect (a login page or single sign-on
-  proxy, or `http` to `https`) is an unknown outcome caused by
-  `HTTP_REDIRECTED`. The HTTP client follows the redirect with a GET, so the
-  page it lands on said nothing about the write, yet a 200 from it read as an
-  acknowledged write whose response could not be decoded. A redirected search
-  (Cloud's JQL search is a POST) reports `HTTP_REDIRECTED` too, instead of a
+  proxy, or `http` to `https`) is an unknown outcome with the redirect's
+  status and a hint on what a redirect usually means. agent-cli-kit v0.7.0's
+  transport returns a write's redirect instead of following it. Before, a
+  301, 302 or 303 was followed with a GET, and a 200 from the page it landed
+  on read as an acknowledged write whose response could not be decoded; a 307
+  or 308 sent the write again to the new location. A redirected search
+  (Cloud's JQL search is a POST) reports the 3xx status too, instead of a
   decode error.
 - `config init`'s plain prompts read through agent-cli-kit's `terminal`
   package too: an answer cut short by a failed read (not the end of input) is

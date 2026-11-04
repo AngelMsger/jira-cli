@@ -392,11 +392,13 @@ it) and the helpers below:
   network error, 429, 5xx or an internal error, leaves the outcome unknown: the
   original code, category, HTTP status, details and error cause are retained,
   with `retryable: false` and read-only verification commands.
-- Only a 2xx response acknowledges a write. Unexpected 3xx responses remain
-  uncertain; decode errors retain the actual response status. A same-origin
-  301, 302 or 303 is followed with a GET, so its final response answers that
-  GET (often a login page), not the write: `doJSON` reports it as
-  `HTTP_REDIRECTED` (server), which the rule turns into an unknown outcome.
+- Only a 2xx response acknowledges a write. Decode errors retain the actual
+  response status. The kit's transport follows a redirect only for a GET or
+  HEAD, so a write's (or a POST search's) 3xx reaches `doJSON` as is, and the
+  write rule turns it into an unknown outcome with that status. Following it
+  would answer a different request: a GET to the redirect's target (often a
+  login page) after a 301, 302 or 303, or the write sent again after a 307 or
+  308.
 - A successful write followed by an invalid/incomplete response returns
   `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
   newest-issues query scoped to the project; the error does not invent a key.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -202,31 +203,33 @@ func TestReadFailureRecoveryUnchanged(t *testing.T) {
 	}
 }
 
-// A redirect after a write is followed with a GET, so the final 200 answers
-// that GET (here a login page) and says nothing about the write. Before this
-// rule the comment read as added, or failed to decode as if Jira had
-// acknowledged it.
+// The transport returns a write's redirect instead of following it, so a
+// redirect (here to a login page) is an unknown outcome with its 302 status.
+// Before, the client followed it with a GET, whose 200 login page read as
+// the comment added or failed to decode as if Jira had acknowledged it; and a
+// 307 sent the comment again to the new location.
 func TestRedirectedWriteIsAnUnknownOutcome(t *testing.T) {
 	for _, flavor := range []Flavor{FlavorCloud, FlavorDataCenter} {
-		t.Run(string(flavor), func(t *testing.T) {
-			client := newTestClient(t, flavor, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/login" {
-					w.Header().Set("Content-Type", "text/html")
-					_, _ = w.Write([]byte("<html>sign in</html>"))
-					return
+		for _, status := range []int{http.StatusFound, http.StatusTemporaryRedirect} {
+			t.Run(fmt.Sprintf("%s %d", flavor, status), func(t *testing.T) {
+				var landed int
+				client := newTestClient(t, flavor, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/login" {
+						landed++
+						w.Header().Set("Content-Type", "text/html")
+						_, _ = w.Write([]byte("<html>sign in</html>"))
+						return
+					}
+					http.Redirect(w, r, "/login", status)
+				}))
+				_, err := client.AddComment(context.Background(), AddCommentReq{IssueKey: "ENG-123", Body: "text"})
+				ce := cerrors.AsCLIError(err)
+				if ce == nil || ce.Retryable || ce.HTTPStatus != status || landed != 0 ||
+					!strings.HasPrefix(ce.Message, "Write outcome is unknown") ||
+					!strings.Contains(ce.Hint, "answered it with a redirect") {
+					t.Fatalf("got %+v after %d login page requests; want an unknown outcome with the %d", ce, landed, status)
 				}
-				http.Redirect(w, r, "/login", http.StatusFound)
-			}))
-			_, err := client.AddComment(context.Background(), AddCommentReq{IssueKey: "ENG-123", Body: "text"})
-			ce := cerrors.AsCLIError(err)
-			if ce == nil || ce.Retryable || ce.Code == cerrors.CodeWriteSucceededResponseInvalid ||
-				!strings.HasPrefix(ce.Message, "Write outcome is unknown") {
-				t.Fatalf("got %+v; want an unknown write outcome", ce)
-			}
-			var cause *cerrors.CLIError
-			if !errors.As(errors.Unwrap(ce), &cause) || cause.Code != "HTTP_REDIRECTED" {
-				t.Fatalf("cause %+v; want HTTP_REDIRECTED", cause)
-			}
-		})
+			})
+		}
 	}
 }
