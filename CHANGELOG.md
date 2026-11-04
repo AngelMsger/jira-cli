@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A write that Jira answered with a redirect (a login page or single sign-on
+  proxy, or `http` to `https`) is an unknown outcome caused by
+  `HTTP_REDIRECTED`. The HTTP client follows the redirect with a GET, so the
+  page it lands on said nothing about the write, yet a 200 from it read as an
+  acknowledged write whose response could not be decoded.
 - `config init`'s plain prompts read through agent-cli-kit's `terminal`
   package too: an answer cut short by a failed read (not the end of input) is
   an error, not an answer, so a broken stdin can no longer confirm "Save

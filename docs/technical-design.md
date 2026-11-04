@@ -393,7 +393,10 @@ it) and the helpers below:
   original code, category, HTTP status, details and error cause are retained,
   with `retryable: false` and read-only verification commands.
 - Only a 2xx response acknowledges a write. Unexpected 3xx responses remain
-  uncertain; decode errors retain the actual response status.
+  uncertain; decode errors retain the actual response status. A same-origin
+  301, 302 or 303 is followed with a GET, so its final response answers that
+  GET (often a login page), not the write: `doJSON` reports it as
+  `HTTP_REDIRECTED` (server), which the rule turns into an unknown outcome.
 - A successful write followed by an invalid/incomplete response returns
   `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
   newest-issues query scoped to the project; the error does not invent a key.

@@ -175,6 +175,9 @@ func (c *apiClient) doJSON(ctx context.Context, method, path string, query url.V
 	}
 	defer resp.Body.Close()
 
+	if err := redirectedWrite(method, resp); err != nil {
+		return err
+	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return c.httpError(resp)
 	}
@@ -241,4 +244,20 @@ func extractAPIMessage(raw []byte) string {
 		parts = append(parts, field+": "+m)
 	}
 	return strings.Join(parts, "; ")
+}
+
+// redirectedWrite reports a write that a redirect turned into another request.
+// The HTTP client follows a 301, 302 or 303 after a POST, PUT or DELETE with a
+// GET, so the final response answers that GET (often a login page or a proxy),
+// never the write, and a status or body read from it would prove nothing.
+// Whether the write was applied is unknown, so the error is not a refusal and
+// the write rule reports it as an unknown outcome.
+func redirectedWrite(method string, resp *http.Response) error {
+	if resp.Request == nil || resp.Request.Method == method {
+		return nil
+	}
+	return cerrors.Newf(cerrors.CategoryServer, "HTTP_REDIRECTED",
+		"Jira redirected the %s request to %s", method, resp.Request.URL.Redacted()).
+		WithHint("A redirect after a write usually means a login page, a single sign-on proxy, " +
+			"or a base URL that should use https. Check --base-url, then run doctor.")
 }
