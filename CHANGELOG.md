@@ -20,8 +20,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the client without a blocking override fails to compile instead of
   passing through read-only mode. CLI behavior, output and errors are
   unchanged.
+- `READONLY_BLOCKED` uses the family's wording from agent-cli-kit. The hint
+  says nothing was sent and that read-only mode is the user's setting, naming
+  `JIRA_CLI_READ_ONLY` and `defaults.read_only`. The next steps are `--dry-run`
+  and, only for a write the user authorized, `--allow-writes`; they no longer
+  suggest unsetting the variable or editing the config. Code, category and
+  exit code are unchanged.
+- The write-outcome rule now comes from agent-cli-kit (`errors.FromWrite`),
+  shared with the other CLIs. Errors read as before, with two differences: an
+  internal error during a write (such as failing to encode the request) is now
+  an unknown outcome too, and a rewrapped error keeps the cause's details.
+  `pkg/errors` re-exports `WriteTarget`, `FromWrite`, `WriteSucceeded`,
+  `MissingWriteIdentity`, `ShellArg`, `ReadOnlyBlocked` and their codes.
 
 ### Fixed
+
+- A write that Jira answered with a redirect (a login page or single sign-on
+  proxy, or `http` to `https`) is an unknown outcome caused by
+  `HTTP_REDIRECTED`. The HTTP client follows the redirect with a GET, so the
+  page it lands on said nothing about the write, yet a 200 from it read as an
+  acknowledged write whose response could not be decoded. A redirected search
+  (Cloud's JQL search is a POST) reports `HTTP_REDIRECTED` too, instead of a
+  decode error.
+- `config init`'s plain prompts read through agent-cli-kit's `terminal`
+  package too: an answer cut short by a failed read (not the end of input) is
+  an error, not an answer, so a broken stdin can no longer confirm "Save
+  configuration anyway?".
+- A command started with stdin on `/dev/null` (cron, CI, agent runners) no
+  longer counts it as a terminal. `comment delete` and `worklog delete` without
+  `--yes` now fail with `DELETE_NEEDS_YES` instead of reading an empty answer
+  and reporting `DELETE_ABORTED`, and `auth login` and `config init --pretty`
+  refuse to prompt. Terminal checks and prompts use agent-cli-kit's `terminal`
+  package.
 
 - Mask passwords embedded in the server URL in `--verbose` request logs, with
   agent-cli-kit v0.6.0's transport.

@@ -201,3 +201,32 @@ func TestReadFailureRecoveryUnchanged(t *testing.T) {
 		})
 	}
 }
+
+// A redirect after a write is followed with a GET, so the final 200 answers
+// that GET (here a login page) and says nothing about the write. Before this
+// rule the comment read as added, or failed to decode as if Jira had
+// acknowledged it.
+func TestRedirectedWriteIsAnUnknownOutcome(t *testing.T) {
+	for _, flavor := range []Flavor{FlavorCloud, FlavorDataCenter} {
+		t.Run(string(flavor), func(t *testing.T) {
+			client := newTestClient(t, flavor, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/login" {
+					w.Header().Set("Content-Type", "text/html")
+					_, _ = w.Write([]byte("<html>sign in</html>"))
+					return
+				}
+				http.Redirect(w, r, "/login", http.StatusFound)
+			}))
+			_, err := client.AddComment(context.Background(), AddCommentReq{IssueKey: "ENG-123", Body: "text"})
+			ce := cerrors.AsCLIError(err)
+			if ce == nil || ce.Retryable || ce.Code == cerrors.CodeWriteSucceededResponseInvalid ||
+				!strings.HasPrefix(ce.Message, "Write outcome is unknown") {
+				t.Fatalf("got %+v; want an unknown write outcome", ce)
+			}
+			var cause *cerrors.CLIError
+			if !errors.As(errors.Unwrap(ce), &cause) || cause.Code != "HTTP_REDIRECTED" {
+				t.Fatalf("cause %+v; want HTTP_REDIRECTED", cause)
+			}
+		})
+	}
+}

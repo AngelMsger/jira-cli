@@ -20,19 +20,16 @@ type readOnlyClient struct{ Reader }
 
 var _ Client = (*readOnlyClient)(nil)
 
-// blocked returns the structured error for a blocked write. op names the
-// operation (e.g. "CreateIssue") so the error message is precise about which
-// call was refused.
+// blocked returns the family's READONLY_BLOCKED error for a refused write. op
+// names the operation (e.g. "CreateIssue") so the message says which call was
+// refused. Turning read-only mode off is the user's decision, so the error
+// names the user's switches without offering to change them.
 func blocked(op string) *cerrors.CLIError {
-	return cerrors.Newf(cerrors.CategoryPermission, "READONLY_BLOCKED",
-		"operation %q blocked: read-only mode is enabled", op).
-		WithHint("Re-run with --allow-writes to permit writes for this invocation, "+
-			"or unset JIRA_CLI_READ_ONLY / defaults.read_only.").
-		WithNextSteps(
-			"Add --allow-writes to the command line",
-			"unset JIRA_CLI_READ_ONLY",
-			"Set defaults.read_only=false in ~/.angelmsger/jira/config.yaml",
-		)
+	return cerrors.ReadOnlyBlocked(op, cerrors.ReadOnlyMode{
+		Env:        "JIRA_CLI_READ_ONLY",
+		ConfigFile: "~/.angelmsger/jira/config.yaml",
+		DryRun:     true,
+	})
 }
 
 // Issue writes.

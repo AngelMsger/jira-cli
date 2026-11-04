@@ -1,9 +1,7 @@
 package app
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -85,9 +83,12 @@ func confirmDelete(prompt string, yes bool) error {
 			"delete requires --yes when stdin is not a terminal").
 			WithHint("Re-run with --yes to confirm the deletion.")
 	}
-	fmt.Fprintf(os.Stderr, "Delete %s? [y/N] ", prompt)
-	line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-	if ans := strings.ToLower(strings.TrimSpace(line)); ans != "y" && ans != "yes" {
+	ok, err := prompter().Confirm("Delete " + prompt + "?")
+	if err != nil {
+		return cerrors.Wrap(err, cerrors.CategoryUsage, "DELETE_ABORTED",
+			"deletion cancelled: the confirmation could not be read")
+	}
+	if !ok {
 		return cerrors.New(cerrors.CategoryUsage, "DELETE_ABORTED", "deletion cancelled")
 	}
 	return nil

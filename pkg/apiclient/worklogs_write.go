@@ -223,7 +223,7 @@ func (c *apiClient) AddWorklog(ctx context.Context, req AddWorklogReq) (*Worklog
 		return nil, err
 	}
 	if raw.ID == "" {
-		return nil, missingWriteIdentity(target)
+		return nil, cerrors.MissingWriteIdentity(target)
 	}
 	out := mapWorklog(raw, req.IssueKey)
 	return &out, nil
@@ -274,7 +274,7 @@ func (c *apiClient) UpdateWorklog(ctx context.Context, req UpdateWorklogReq) (*W
 		return nil, err
 	}
 	if raw.ID == "" {
-		return nil, missingWriteIdentity(target)
+		return nil, cerrors.MissingWriteIdentity(target)
 	}
 	out := mapWorklog(raw, req.IssueKey)
 	return &out, nil

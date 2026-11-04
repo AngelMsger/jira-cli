@@ -382,13 +382,21 @@ Categories: `usage config auth not_found permission conflict rate_limit
 network server parse internal`.
 
 Mutation errors use this existing envelope without changing category/exit-code
-mapping. `pkg/apiclient/write_errors.go` supplies the common behavior:
+mapping. The rule is the family's, from agent-cli-kit (`errors.FromWrite`,
+`WriteSucceeded`, `MissingWriteIdentity`); `pkg/apiclient/write_errors.go`
+supplies jira-cli's write targets (what a write changes and the read that shows
+it) and the helpers below:
 
-- `doWriteJSON` disables replay guidance for uncertain network, 429 and 5xx
-  write failures. The original code, category, HTTP status and error cause are
-  retained, with `retryable: false` and read-only verification commands.
+- `doWriteJSON` passes a definite refusal (usage, config, auth, permission,
+  not found, conflict) through unchanged. Every other failure, including a
+  network error, 429, 5xx or an internal error, leaves the outcome unknown: the
+  original code, category, HTTP status, details and error cause are retained,
+  with `retryable: false` and read-only verification commands.
 - Only a 2xx response acknowledges a write. Unexpected 3xx responses remain
-  uncertain; decode errors retain the actual response status.
+  uncertain; decode errors retain the actual response status. A same-origin
+  301, 302 or 303 is followed with a GET, so its final response answers that
+  GET (often a login page), not the write: `doJSON` reports it as
+  `HTTP_REDIRECTED` (server), which the rule turns into an unknown outcome.
 - A successful write followed by an invalid/incomplete response returns
   `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
   newest-issues query scoped to the project; the error does not invent a key.

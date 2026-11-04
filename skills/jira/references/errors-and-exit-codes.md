@@ -57,7 +57,9 @@ compare the description/summary and follow cursors if needed. An empty first
 page is not evidence that nothing was created.
 
 Network, rate-limit and server failures during a write have an **unknown
-outcome** and `retryable: false`. Verify the issue or comment state before
+outcome** and `retryable: false`. So does a write that Jira redirected (cause
+`HTTP_REDIRECTED`, usually a login page or single sign-on proxy): check
+`--base-url` and run `doctor` before reading the state. Verify the issue or comment state before
 considering another write. This also applies to comments added by transitions.
 The CLI does not replay mutations automatically. A failed batch may contain
 successful deletions: inspect per-item results, never replay the whole batch.

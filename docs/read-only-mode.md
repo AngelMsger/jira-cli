@@ -73,11 +73,10 @@ $ jira-cli issue create --project ENG --type Task --summary "X"
     "category": "permission",
     "code": "READONLY_BLOCKED",
     "message": "operation \"CreateIssue\" blocked: read-only mode is enabled",
-    "hint": "Re-run with --allow-writes to permit writes for this invocation, or unset JIRA_CLI_READ_ONLY / defaults.read_only.",
+    "hint": "Read-only mode is on, so nothing was sent. The user turned it on (JIRA_CLI_READ_ONLY or defaults.read_only in ~/.angelmsger/jira/config.yaml), and only the user turns it off. --allow-writes lifts it for one invocation and is for a write the user authorized.",
     "next_steps": [
-      "Add --allow-writes to the command line",
-      "unset JIRA_CLI_READ_ONLY",
-      "Set defaults.read_only=false in ~/.angelmsger/jira/config.yaml"
+      "Add --dry-run to preview the request without sending it",
+      "Only if the user authorized this write, re-run with --allow-writes"
     ],
     "retryable": false
   }
