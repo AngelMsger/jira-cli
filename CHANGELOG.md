@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A write that Jira answered with a redirect (a login page or single sign-on
   proxy, or `http` to `https`) is an unknown outcome with the redirect's
-  status and a hint on what a redirect usually means. agent-cli-kit v0.7.0's
+  status and a hint on what a redirect usually means. agent-cli-kit v0.8.0's
   transport returns a write's redirect instead of following it. Before, a
   301, 302 or 303 was followed with a GET, and a 200 from the page it landed
   on read as an acknowledged write whose response could not be decoded; a 307
