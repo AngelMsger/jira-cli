@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `apiclient.Reader` and `apiclient.Writer`, the read and write halves of
   `apiclient.Client`, for library callers. `Client` keeps exactly the same
   methods and signatures.
+- `pkg/errors` re-exports agent-cli-kit's `RedirectGuide`, which names the
+  setting and next steps a redirect's error gives.
 
 ### Changed
 
@@ -60,18 +62,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   redirect's (`HTTP_Moved Permanently`, `HTTP_Found`, `HTTP_See Other`,
   `HTTP_Temporary Redirect` or `HTTP_Permanent Redirect`; server, exit 9),
   with `retryable: false` and the read to check.
-- Update the companion Skill to `0.4.5`: a redirect is not retryable, and
-  read-only mode's wording.
+- Update the companion Skill to `0.4.5`: a redirect is not retryable,
+  `doctor`'s `redirected` status, and read-only mode's wording.
 - Cloud's JQL search is a POST that only reads, so it is marked as a read
   (agent-cli-kit's `transport.AsRead`): a 307 or 308 sends the same search
   again and a transient failure is retried, as for a GET. A 301, 302 or 303,
   which would turn it into a GET without the JQL, reports the redirect
   (`HTTP_<status text>`, server, exit 9) instead of a decode error (parse,
   exit 10) for the login page behind it.
-- A redirect the client does not follow is not retryable and says what a
-  redirect usually means (a login page, a single sign-on proxy, or a
-  `--base-url` that should use https), with `doctor` as the next step. It
-  was a retryable server error, but the same request is redirected again.
+- A redirect the client does not follow is not retryable and says where it
+  points (the scheme and host only) and what a redirect usually means (a
+  login page, a single sign-on proxy, or a `--base-url` that should use
+  https), with `doctor` as the next step. It was a retryable server error,
+  but the same request is redirected again. A 3xx without a `Location` (a
+  300 or 304) is not retryable either, with a hint that the same request
+  gets the same answer. The rule is agent-cli-kit v0.9.0's
+  `CLIError.WithRedirect`, shared by the family.
+- A read that loops through 10 redirects reports the last one
+  (`HTTP_Found` or the redirect's own code, server, exit 9, not retryable,
+  with the redirect hint). 0.10.0 reported `NETWORK` (exit 8, retryable, a
+  DNS/TLS/timeout hint), although nothing retried it.
+- `doctor` reports a check that got a redirect with status `redirected`
+  instead of `unreachable`, and its `detail` adds the redirect hint (where it
+  points, and to check `--base-url`). 0.10.0 showed only "Jira returned HTTP
+  302". The status and detail rules come from agent-cli-kit's `doctor`
+  package, shared by the family.
 - `config init`'s plain prompts read through agent-cli-kit's `terminal`
   package too: an answer cut short by a failed read (not the end of input) is
   an error, not an answer, so a broken stdin can no longer confirm "Save

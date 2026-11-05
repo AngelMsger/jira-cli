@@ -407,9 +407,13 @@ it) and the helpers below:
   can pass its own HTTP client (`transport.Options.Doer`), which keeps its
   own redirect policy and may follow anyway, even sending a write again on a
   307 or 308; the kit still answers the request with the redirect the write
-  got, so the outcome is the same unknown one. `httpError` reports
-  any 3xx as `HTTP_<status text>` (server), not retryable, since the same
-  request is redirected again, with a hint to check `--base-url`.
+  got, so the outcome is the same unknown one. A read's tenth hop comes back
+  as is too. `httpError` reports any 3xx as `HTTP_<status text>` (server)
+  with the kit's redirect rule (`CLIError.WithRedirect`): not retryable,
+  since the same request is redirected again, with a hint naming where it
+  points (scheme and host) and `--base-url`, and `doctor` as the next step.
+  `doctor` reports such a check as `redirected` (agent-cli-kit's `doctor`
+  package), with the hint in its detail.
 - A successful write followed by an invalid/incomplete response returns
   `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
   newest-issues query scoped to the project; the error does not invent a key.
