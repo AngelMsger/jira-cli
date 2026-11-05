@@ -331,8 +331,9 @@ func assertBodyDialect(t *testing.T, flavor Flavor, raw json.RawMessage, wantTex
 // Cloud's JQL search is a POST that only reads, so a 307 or 308 in front of
 // Jira sends the same search again, and a 503 is retried, as for a GET. A
 // 302 would turn it into a GET without the JQL, so it is reported with its
-// status instead. With agent-cli-kit v0.7.0 an unmarked POST got every
-// redirect back and was sent once.
+// status instead, not retryable (the same search is redirected again) and
+// with a hint on what a redirect usually means. With agent-cli-kit v0.7.0 an
+// unmarked POST got every redirect back and was sent once.
 func TestCloudSearchIsFollowedAndRetriedAsARead(t *testing.T) {
 	t.Parallel()
 	for _, status := range []int{http.StatusTemporaryRedirect, http.StatusPermanentRedirect, http.StatusServiceUnavailable, http.StatusFound} {
@@ -360,8 +361,10 @@ func TestCloudSearchIsFollowedAndRetriedAsARead(t *testing.T) {
 		_, err := c.SearchIssues(context.Background(), SearchOpts{JQL: "project = ENG"})
 		srv.Close()
 		if status == http.StatusFound {
-			if ce := cerrors.AsCLIError(err); ce == nil || ce.HTTPStatus != status || sent != 1 {
-				t.Fatalf("302: got %+v after %d requests; want the redirect reported", ce, sent)
+			if ce := cerrors.AsCLIError(err); ce == nil || ce.HTTPStatus != status || sent != 1 ||
+				ce.Code != "HTTP_Found" || ce.Category != cerrors.CategoryServer || ce.Retryable ||
+				!strings.Contains(ce.Hint, "redirect") || len(ce.NextSteps) == 0 || ce.NextSteps[0] != "jira-cli doctor" {
+				t.Fatalf("302: got %+v after %d requests; want the redirect reported, not retryable", ce, sent)
 			}
 			continue
 		}

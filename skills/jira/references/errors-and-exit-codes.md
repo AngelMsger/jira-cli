@@ -38,7 +38,7 @@ instead.
 | 6 | not_found | issue/project/comment does not exist (404); verify the key, or `issue search` |
 | 7 | rate_limit | server throttling (429); wait, then retry; avoid `--all` on huge queries |
 | 8 | network | DNS/TLS/timeout; check `--base-url`, run `doctor` |
-| 9 | server | Jira 5xx; retry later |
+| 9 | server | Jira 5xx; retry later. A redirect the CLI does not follow (a 3xx `http_status`) is `retryable: false`: check `--base-url`, run `doctor` |
 | 10 | parse | a response could not be decoded; likely a client bug — the write may have succeeded, verify with a read |
 | 11 | conflict | a write hit a conflict (409); re-read the issue, then retry |
 

@@ -217,8 +217,21 @@ func (c *apiClient) httpError(resp *http.Response) error {
 	if detail := extractAPIMessage(snippet); detail != "" {
 		msg += ": " + detail
 	}
-	return cerrors.New(cat, "HTTP_"+http.StatusText(resp.StatusCode), msg).
+	e := cerrors.New(cat, "HTTP_"+http.StatusText(resp.StatusCode), msg).
 		WithHTTPStatus(resp.StatusCode)
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		// The kit's transport follows a read's redirect when the next hop
+		// sends the same request, and returns any other: a write's, or a
+		// POST search's 301, 302 or 303. The same request is redirected the
+		// same way again, so retrying cannot help. For a write, the write
+		// rule replaces this hint with its own.
+		e = e.WithHint("Jira answered with a redirect: usually a login page, a single sign-on proxy, " +
+			"or a --base-url that should use https. The same request is redirected again, so check " +
+			"--base-url first.").
+			WithNextSteps("jira-cli doctor")
+		e.Retryable = false
+	}
+	return e
 }
 
 // extractAPIMessage best-effort extracts a human message from a Jira JSON

@@ -45,8 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud's JQL search is a POST that only reads, so it is marked as a read
   (agent-cli-kit's `transport.AsRead`): a 307 or 308 sends the same search
   again and a transient failure is retried, as for a GET. A 301, 302 or 303,
-  which would turn it into a GET without the JQL, reports the 3xx status
-  instead of a decode error.
+  which would turn it into a GET without the JQL, reports the redirect
+  (`HTTP_<status text>`, server, exit 9) instead of a decode error (parse,
+  exit 10) for the login page behind it.
+- A redirect the client does not follow is not retryable and says what a
+  redirect usually means (a login page, a single sign-on proxy, or a
+  `--base-url` that should use https), with `doctor` as the next step. It
+  was a retryable server error, but the same request is redirected again.
 - `config init`'s plain prompts read through agent-cli-kit's `terminal`
   package too: an answer cut short by a failed read (not the end of input) is
   an error, not an answer, so a broken stdin can no longer confirm "Save

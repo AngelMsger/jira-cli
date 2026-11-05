@@ -393,12 +393,18 @@ it) and the helpers below:
   original code, category, HTTP status, details and error cause are retained,
   with `retryable: false` and read-only verification commands.
 - Only a 2xx response acknowledges a write. Decode errors retain the actual
-  response status. The kit's transport follows a redirect only for a GET or
-  HEAD, so a write's (or a POST search's) 3xx reaches `doJSON` as is, and the
-  write rule turns it into an unknown outcome with that status. Following it
-  would answer a different request: a GET to the redirect's target (often a
-  login page) after a 301, 302 or 303, or the write sent again after a 307 or
-  308.
+  response status. The kit's transport follows a redirect only for a read,
+  and only when the next hop sends the same request. A read is a GET or
+  HEAD, or a request marked with `transport.AsRead`: Cloud's JQL search is a
+  POST that only reads, so it is marked. A marked POST follows a 307 or 308,
+  which Go sends again with the same method and body; a 301, 302 or 303 would
+  become a GET without the JQL, so it reaches `doJSON` as is. A write is never
+  followed: its 3xx reaches `doJSON` as is, and the write rule turns it into
+  an unknown outcome with that status. Following it would answer a different
+  request: a GET to the redirect's target (often a login page) after a 301,
+  302 or 303, or the write sent again after a 307 or 308. `httpError` reports
+  any 3xx as `HTTP_<status text>` (server), not retryable, since the same
+  request is redirected again, with a hint to check `--base-url`.
 - A successful write followed by an invalid/incomplete response returns
   `WRITE_SUCCEEDED_RESPONSE_INVALID`. A missing creation key uses a bounded
   newest-issues query scoped to the project; the error does not invent a key.
