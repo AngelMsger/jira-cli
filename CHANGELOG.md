@@ -41,7 +41,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transport returns a write's redirect instead of following it. Before, a
   301, 302 or 303 was followed with a GET, and a 200 from the page it landed
   on read as an acknowledged write whose response could not be decoded; a 307
-  or 308 sent the write again to the new location.
+  or 308 sent the write again to the new location. **Codes change for such a
+  write.** 0.10.0 reported, for a redirect to an HTML page:
+  `WRITE_SUCCEEDED_RESPONSE_INVALID` (parse, exit 10) when the command
+  decodes the write's response (`issue create`, `comment add`/`update`,
+  `worklog add`/`update`); success (exit 0) when it decodes nothing
+  (`issue assign`, `comment delete`, `worklog delete`); and for `issue edit`
+  and `issue transition`, which read the issue afterwards, success when
+  that read worked or `WRITE_SUCCEEDED_READ_FAILED` (parse, exit 10) when it
+  landed on the same page. It is now an unknown outcome whose code is the
+  redirect's (`HTTP_Moved Permanently`, `HTTP_Found`, `HTTP_See Other`,
+  `HTTP_Temporary Redirect` or `HTTP_Permanent Redirect`; server, exit 9),
+  with `retryable: false` and the read to check.
+- Update the companion Skill to `0.4.5`: a redirect is not retryable, and
+  read-only mode's wording.
 - Cloud's JQL search is a POST that only reads, so it is marked as a read
   (agent-cli-kit's `transport.AsRead`): a 307 or 308 sends the same search
   again and a transient failure is retried, as for a GET. A 301, 302 or 303,
