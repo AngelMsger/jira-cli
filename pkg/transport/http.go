@@ -26,6 +26,11 @@ type (
 	Options = kit.Options
 )
 
+// AsRead marks the requests sent with the returned context as reads, whatever
+// their method: the client retries them and follows their redirects as it
+// does a GET. Cloud's JQL search, a POST, uses it.
+var AsRead = kit.AsRead
+
 // New returns a Client. Requests that carry no User-Agent get jira-cli's.
 func New(opt Options) *Client {
 	if opt.UserAgent == "" {

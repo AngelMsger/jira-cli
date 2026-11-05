@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	cerrors "github.com/angelmsger/jira-cli/pkg/errors"
+	"github.com/angelmsger/jira-cli/pkg/transport"
 )
 
 // defaultSearchFields is the field set requested per issue when the caller
@@ -48,7 +49,9 @@ func (c *apiClient) SearchIssues(ctx context.Context, opt SearchOpts) (ListResul
 			NextPageToken string     `json:"nextPageToken"`
 			IsLast        bool       `json:"isLast"`
 		}
-		if err := c.doJSON(ctx, "POST", c.apiBase()+"/search/jql", nil, body, &raw); err != nil {
+		// Cloud's JQL search is a POST that only reads, so the transport
+		// retries it and follows its redirect as it does a GET.
+		if err := c.doJSON(transport.AsRead(ctx), "POST", c.apiBase()+"/search/jql", nil, body, &raw); err != nil {
 			return ListResult[Issue]{}, err
 		}
 		res := ListResult[Issue]{}
