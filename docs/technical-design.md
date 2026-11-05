@@ -395,7 +395,8 @@ it) and the helpers below:
 - Only a 2xx response acknowledges a write. Decode errors retain the actual
   response status. The kit's transport follows a redirect only for a read,
   and only when the next hop sends the same request. A read is a GET or
-  HEAD, or a request marked with `transport.AsRead`: Cloud's JQL search is a
+  HEAD, a method listed in `transport.Options.RetryMethods` (jira-cli lists
+  none), or a request marked with `transport.AsRead`: Cloud's JQL search is a
   POST that only reads, so it is marked. A marked POST follows a 307 or 308,
   which Go sends again with the same method and body; a 301, 302 or 303 would
   become a GET without the JQL, so it reaches `doJSON` as is. A write is never
