@@ -151,7 +151,7 @@ limits; omit raw JSON and routine command transcripts unless requested.
 
 ## Agent-facing conventions
 
-- **Skill handshake — set `JIRA_CLI_SKILL=0.4.4`.** Once you have loaded
+- **Skill handshake — set `JIRA_CLI_SKILL=0.4.5`.** Once you have loaded
   this Skill, export that exact value in the environment used to run the CLI.
   The CLI compares it with the embedded Skill version and emits a structured
   stderr notice when the Skill is missing, old, or uses the legacy unversioned

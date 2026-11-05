@@ -393,8 +393,8 @@ it) and the helpers below:
   original code, category, HTTP status, details and error cause are retained,
   with `retryable: false` and read-only verification commands.
 - Only a 2xx response acknowledges a write. Decode errors retain the actual
-  response status. The kit's transport follows a redirect only for a read,
-  and only when the next hop sends the same request. A read is a GET or
+  response status. The kit's default transport follows a redirect only for a
+  read, and only when the next hop sends the same request. A read is a GET or
   HEAD, a method listed in `transport.Options.RetryMethods` (jira-cli lists
   none), or a request marked with `transport.AsRead`: Cloud's JQL search is a
   POST that only reads, so it is marked. A marked POST follows a 307 or 308,
@@ -403,7 +403,11 @@ it) and the helpers below:
   followed: its 3xx reaches `doJSON` as is, and the write rule turns it into
   an unknown outcome with that status. Following it would answer a different
   request: a GET to the redirect's target (often a login page) after a 301,
-  302 or 303, or the write sent again after a 307 or 308. `httpError` reports
+  302 or 303, or the write sent again after a 307 or 308. A library caller
+  can pass its own HTTP client (`transport.Options.Doer`), which keeps its
+  own redirect policy and may follow anyway, even sending a write again on a
+  307 or 308; the kit still answers the request with the redirect the write
+  got, so the outcome is the same unknown one. `httpError` reports
   any 3xx as `HTTP_<status text>` (server), not retryable, since the same
   request is redirected again, with a hint to check `--base-url`.
 - A successful write followed by an invalid/incomplete response returns
