@@ -220,19 +220,18 @@ func (c *apiClient) httpError(resp *http.Response) error {
 	e := cerrors.New(cat, "HTTP_"+http.StatusText(resp.StatusCode), msg).
 		WithHTTPStatus(resp.StatusCode)
 	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
-		// The kit's transport follows a read's redirect when the next hop
-		// sends the same request, and returns any other: a write's, or a
-		// POST search's 301, 302 or 303. The same request is redirected the
-		// same way again, so retrying cannot help. For a write, the write
-		// rule replaces this hint with its own.
-		e = e.WithHint("Jira answered with a redirect: usually a login page, a single sign-on proxy, " +
-			"or a --base-url that should use https. The same request is redirected again, so check " +
-			"--base-url first.").
-			WithNextSteps("jira-cli doctor")
-		e.Retryable = false
+		// The kit's transport returns a redirect it does not follow: a
+		// write's, a POST search's 301, 302 or 303, or the tenth hop. The
+		// kit's redirect rule reports it; for a write, the write rule then
+		// replaces its hint with its own.
+		loc, _ := resp.Location()
+		e = e.WithRedirect(loc, redirectGuide)
 	}
 	return e
 }
+
+// redirectGuide is what a redirect's error tells the user to check.
+var redirectGuide = cerrors.RedirectGuide{Setting: "--base-url", Steps: []string{"jira-cli doctor"}}
 
 // extractAPIMessage best-effort extracts a human message from a Jira JSON
 // error body. Jira reports errors as {"errorMessages": [...], "errors":
